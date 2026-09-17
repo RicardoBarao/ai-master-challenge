@@ -125,3 +125,6 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
   2. As contagens da auditoria saíam sem separador de milhar.
   3. O total recuperável é 2.514 h (arredondamento de 2.514,5), mas o log dizia ~2.515.
   4. Uma frase atribuía ao Ricardo um motivo para ter interrompido um comando, e esse motivo nunca foi dito. Removida: não inventar intenção de pessoa.
+
+### [claude] 2026-09-16 — Registro das ferramentas
+- O Ricardo esclareceu a configuração do segundo agente: **Codex com o modelo gpt-6-astra em raciocínio xhigh**, usado em dois papéis: auditor de qualidade do backend (revisão cruzada em modo leitura) e construção da interface. Tabela de ferramentas do README atualizada.

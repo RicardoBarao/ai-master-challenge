@@ -105,7 +105,7 @@ Opcional: `AI_GATEWAY_API_KEY` em `solution/app/.env.local` habilita o rascunho 
 | Ferramenta | Para que usou |
 |---|---|
 | **Claude Code** (Claude Opus 5) | Leitura do desafio e planejamento; auditoria e diagnóstico em Python; classificador, política de roteamento e API; testes; documentação gerada a partir dos dados |
-| **Codex** | Revisão cruzada do backend em modo leitura; construção da interface (Next.js) em paralelo, coordenada por `AGENTS.md` e `HANDOFF.md` |
+| **Codex** (modelo gpt-6-astra, raciocínio xhigh) | Auditor de qualidade do backend (revisão cruzada em modo leitura); construção da interface (Next.js) em paralelo, coordenada por `AGENTS.md` e `HANDOFF.md` |
 
 ### Workflow
 
