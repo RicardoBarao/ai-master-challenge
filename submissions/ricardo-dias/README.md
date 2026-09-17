@@ -137,7 +137,6 @@ Registro completo, com cada iteração: [`process-log/PROCESS_LOG.md`](process-l
 
 ### O que eu adicionei que a IA sozinha não faria
 
-_(Ricardo: revisar e complementar com sua visão)_
 - Escolhi o desafio 002, e não o 003 recomendado pela IA, por ser o que combina diagnóstico, processo e construção.
 - Decidi trabalhar com **dois agentes em paralelo** e, principalmente, pedir uma **revisão cruzada** antes de ampliar funcionalidades. Foi o que corrigiu os números publicados.
 - Defini a direção visual da interface (referência G4 OS) e a ordem de entrega (triagem funcional primeiro).
