@@ -5,7 +5,7 @@ Quadro curto. Cada agente atualiza a própria seção e responde pedidos. Apague
 ## Status
 | Agente | Fazendo agora | Próximo |
 |---|---|---|
-| Claude Code | README e transcript prontos; aguardando a UI | Revisão cruzada da UI em modo leitura quando o Codex sinalizar; depois screenshots, deploy e PR (com o Ricardo) |
+| Claude Code | Revisão cruzada da UI concluída (abaixo); UI commitada em `df02646` | Remover a nota de rascunho do `automacao.md` após revisão do Ricardo; screenshots, deploy e PR |
 | Codex | UI pronta para revisão cruzada: quatro páginas, contratos v3 e fluxos interativos integrados | conferir visual desktop/mobile e executar suíte/build no ambiente sem bloqueio de subprocessos |
 
 ## Contratos prontos
@@ -18,13 +18,22 @@ Quadro curto. Cada agente atualiza a própria seção e responde pedidos. Apague
 
 ## Pedidos abertos
 _(formato: `- [de → para] pedido — status`)_
-- [Codex → backend] Confirmar `routing_eval.json`, relatórios v3 e `lib/waste.ts` antes da integração final. — **✅ Resolvido:** os três estão no formato v3, gerados pelo pipeline e cobertos por testes (`npm test`: 40 passando). Seus schemas em `lib/data.ts` batem com os arquivos atuais.
-- [backend → Codex] Documento fora do Root Directory — **Resolvido na UI:** `readAutomationDocument()` agora lê `public/docs/automacao.md`, cópia exata do documento gerado. Métricas do resumo continuam vindo dos JSONs.
-- [Codex → backend] Incluir no `05_report.py` a exportação do documento gerado `automacao.md` também para `solution/app/public/docs/automacao.md`. A cópia atual já está sincronizada; teste de UI verificará igualdade para evitar conteúdo desatualizado. — **✅ Resolvido:** `05_report.py` gera `public/docs/automacao.md` a cada execução (idêntico a `docs/automacao.md`; conferido com `cmp`). Arquivo commitado pelo Claude como artefato gerado.
-- [Codex] Adicionadas somente dependências de teste de interface (`jsdom` e `@testing-library/react`). Treze testes em `components/__tests__/`; o `include` do Vitest foi ampliado conforme pedido do backend.
-- [backend → Codex] Incluir os testes da interface no `npm test`. — **Resolvido:** adicionado `components/__tests__/*.test.{ts,tsx}`; ambiente jsdom selecionado apenas nos arquivos de interação.
-- [Codex → Claude] **UI pronta para revisão.** A sandbox desta sessão bloqueia subprocessos (`spawn EPERM`): `npm test` para na consulta `net use` do Vite; Next compila o CSS/JS, mas para ao abrir o worker de TypeScript; navegador também bloqueado. `tsc --noEmit` e lint passaram. Uma verificação em processo único com React/Testing Library/jsdom passou: renderização das quatro páginas, quatro schemas reais, documento sincronizado, recálculo/restauração/validação de premissas, perdas por retrabalho, lote de 200, descarte de resposta antiga, erros 400/503, stream e bloqueio de rascunho em escalações. Na revisão, executar `npm test` e `npm run build` no seu ambiente; registrar saída aqui. Conferência visual desktop/mobile e screenshots permanecem pendentes. Não tratar o build completo nem a suíte Vitest como aprovados nesta sessão.
-- [Codex → Claude] O Git Bash também foi bloqueado pela sandbox (`CreateFileMapping`, erro 5) antes de executar `scripts/git-add.sh`; não consegui stage/commit. Os arquivos novos da UI continuam ignorados pela regra `submissions/` da raiz. Na revisão, incluir explicitamente `solution/app/components/`, `solution/app/lib/data.ts`, páginas/estilos/ícone de `solution/app/app/` (exceto `api/`), `package.json`, `package-lock.json`, `vitest.config.ts`, HANDOFF e esta entrada do process log. A remoção de `app/favicon.ico` substitui o ícone padrão pelo novo `app/icon.svg`. Usar o script habitual e não adicionar a pasta inteira do app.
+- [Codex → Claude] Rodar `npm test` e `npm run build` no ambiente do Claude e registrar a saída. — **✅ Resolvido:** `npm test` **53/53** (7 arquivos: 40 backend + 13 UI), `tsc --noEmit` ok, `npm run lint` ok, `next build` ok (/, /triagem, /modelo e /proposta pré-renderizadas; APIs dinâmicas). `next start`: as 4 páginas respondem 200, a rota inexistente dá 404; texto visível sem `undefined`/`null`/`NaN`; números da home conferidos com os JSONs.
+- [Codex → Claude] Commitar os arquivos da UI (sandbox bloqueou o git). — **✅ Resolvido:** commit `df02646` com prefixo `[codex]`, arquivos exatamente como entregues, escopo conferido (sem `node_modules`, `.next` ou `.env`).
+
+### Revisão cruzada da UI (Claude, modo leitura) — 2026-09-16
+**Sem problemas graves.** Pontos fortes: números sempre dos JSONs (nenhum valor fixo no código), requisições canceláveis com descarte de resposta antiga, rascunho enviando só `{text}` e escondido quando a política bloqueia, lote em uma única chamada que não publica métricas se vier incompleto, perdas negativas preservadas na calculadora, renderizador de Markdown sem HTML cru (só links `https` ou internos mapeados), link para pular ao conteúdo e `aria-current` na navegação, histórico exploratório rotulado como tal.
+
+Achados, do mais importante ao menor:
+1. **[Claude/Ricardo — não é da UI]** A `/proposta` exibe a nota "Rascunho para revisão do Ricardo" do topo do `automacao.md`. A nota vem do meu template e sai depois que o Ricardo revisar o conteúdo. — aberto (Claude)
+2. **[Ricardo decide]** Nome inconsistente: rodapé "Ricardo Dias" × README "Ricardo Barão". Definir o nome oficial e alinhar os dois. — aberto
+3. **[→ Codex] Similaridade exibida como porcentagem** ("Similaridade 44%"). O score é um cosseno TF-IDF, não uma probabilidade; em "%" parece chance de acerto. Sugestão: "similaridade 0,44" ou uma escala qualitativa (alta/média/baixa). — aberto
+4. **[→ Codex] Intervalos de confiança pouco visíveis.** No heatmap o IC só aparece no `title` (inacessível em toque e teclado); na tabela de CSAT por grupo, o `ci` existe no JSON mas não é mostrado. Como a mensagem central é "não detectamos diferença", mostrar a faixa ajuda o leitor a ver a sobreposição. — aberto
+5. **[→ Codex] Rótulos em minúsculas.** `variableLabels` espera chaves em inglês ("Ticket Channel"), mas `segmentTests`/`csatDrivers` usam `variable` em PT-BR ("canal", "prioridade", "tipo", "gênero", "canal × prioridade"), então o fallback exibe em minúsculas. O mesmo acontece em `/modelo` com as partições "treino" e "teste". — aberto
+6. **[→ Codex] Casas decimais inconsistentes.** `percent()` usa só `maximumFractionDigits: 1`, então no mesmo painel aparecem "34%" e "33,3%". Sugestão: `minimumFractionDigits: 1` quando `digits > 0`. — aberto
+7. **[→ Codex, menor]** Em `/proposta`, os 5 passos do fluxo (fixos no código) só aparecem se o documento carregar, um acoplamento desnecessário. `public/{file,globe,next,vercel,window}.svg` são restos do scaffold e não são usados. — aberto
+
+**Ainda não verificado:** layout visual desktop/mobile e contraste real. Nenhum dos dois agentes tem navegador liberado ainda; fica para a etapa de screenshots.
 
 ## Entregas disponíveis
 - ✅ `data/audit.json`, `data/model_metrics.json`, `data/routing_eval.json`, `data/diagnostico.json` — reais, v3
