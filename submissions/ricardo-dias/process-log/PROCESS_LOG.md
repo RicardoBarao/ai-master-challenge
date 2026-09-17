@@ -154,3 +154,17 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 - **Onde a IA errou:** a primeira interface confundia o formato de exibição do score de cosseno com o de probabilidades, ocultava intervalos úteis à interpretação estatística e esperava chaves diferentes das entregues pelo backend. A revisão cruzada revelou esses problemas sem alterar os dados ou o modelo.
 - **Validação desta correção:** TypeScript, lint e diff sem erros. Verificação em processo único com React/jsdom confirmou os ICs de todos os segmentos e grupos reais, rótulos, precisão dos percentuais, similaridade após classificação e fluxo com documento indisponível. `npm test` foi tentado, mas a sandbox continua bloqueando o subprocesso do Vite (`spawn EPERM`), antes dos testes. Os 53 testes e build aprovados pelo Claude referem-se à versão anterior; pedi no HANDOFF a revalidação deste diff. Conferência visual em navegador continua pendente.
 - **Git:** o script obrigatório de stage não iniciou porque o Git Bash não conseguiu criar seu signal pipe (erro 5). Alterações preservadas no workspace, sem stage/commit nesta rodada; pedido de versionamento registrado no HANDOFF.
+
+### [claude] 2026-09-16 — Deploy na Vercel, correções do Codex e screenshots
+- **Decisões do Ricardo aplicadas:**
+  - revisou e aprovou o `automacao.md`, e a nota de rascunho saiu;
+  - nome oficial "Ricardo Barão" no README e no rodapé;
+  - deploy na conta viteunimed, time `unibrain` (confirmei explicitamente antes, porque o projeto fica visível ao time);
+  - projeto `g4-challenge-002-ricardo-barao`;
+  - rascunho com LLM desligado no link público.
+- **Proteção de custo:** a rota de rascunho ligava com `AI_GATEWAY_API_KEY` **ou** o token OIDC. Na Vercel esse token existe automaticamente, então o link público poderia gerar chamadas pagas sem ninguém pedir. Passou a exigir `DRAFTS_ENABLED=true`, com teste das combinações.
+- **Publicação a partir do commit, não do workspace:** o Codex tinha alterações em andamento. Usei um `git worktree` limpo do último commit para não publicar arquivos pela metade. O `vercel link` baixou um `.env.local` com o token OIDC; apaguei antes do deploy.
+- **Erro no primeiro deploy:** o status saiu READY, mas todas as rotas davam 404 e só `/docs/automacao.md` respondia. Pelo log, o `next build` tinha rodado. Em `vercel project inspect`, o **Framework Preset estava "Other"** (o projeto foi criado via `vercel project add`), então a Vercel serviu só `public/`. Correção reprodutível: `vercel.json` com `"framework": "nextjs"`. Sem a verificação externa, eu teria reportado "publicado" com um site quebrado.
+- **Correções 3–7 do Codex:** conferi o diff (restrito à UI), rodei `npm test` 54/54, `tsc`, lint e build, commitei como `[codex]` (`784ac9f`) e republiquei.
+- **Verificação visual,** que nenhum agente tinha conseguido fazer: Edge instalado + `playwright-core` numa pasta temporária, contra o deploy público, em 1440 px e 390 px. Sem erro de console, sem HTTP ≥ 400 inesperado e sem rolagem horizontal. Olhei as imagens: hierarquia e números ok. Achado cosmético (cabeçalho levemente translúcido no celular) registrado para o Codex.
+- **Variação de amostra explicada:** um lote aleatório de 200 no deploy deu 82,5% de acerto geral e 92,6% nos automáticos; outro deu 87,5% e 97,6%. Com ~120 tickets automáticos por lote, a margem é de ±4 pontos. A avaliação publicada continua sendo o teste completo (7.176 tickets).

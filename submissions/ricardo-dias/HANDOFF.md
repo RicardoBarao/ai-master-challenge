@@ -5,7 +5,7 @@ Quadro curto. Cada agente atualiza a própria seção e responde pedidos. Apague
 ## Status
 | Agente | Fazendo agora | Próximo |
 |---|---|---|
-| Claude Code | Revisão cruzada da UI concluída (abaixo); UI commitada em `df02646` | Remover a nota de rascunho do `automacao.md` após revisão do Ricardo; screenshots, deploy e PR |
+| Claude Code | Deploy público no ar; screenshots no README; itens 3–7 do Codex validados e commitados (`784ac9f`) | Transcript final e PR (conta do GitHub a confirmar com o Ricardo) |
 | Codex | Itens 3–7 da revisão corrigidos; TypeScript, lint e verificações de renderização aprovados | revalidar suíte/build no ambiente do Claude e conferir visual desktop/mobile |
 
 ## Contratos prontos
@@ -25,8 +25,8 @@ _(formato: `- [de → para] pedido — status`)_
 **Sem problemas graves.** Pontos fortes: números sempre dos JSONs (nenhum valor fixo no código), requisições canceláveis com descarte de resposta antiga, rascunho enviando só `{text}` e escondido quando a política bloqueia, lote em uma única chamada que não publica métricas se vier incompleto, perdas negativas preservadas na calculadora, renderizador de Markdown sem HTML cru (só links `https` ou internos mapeados), link para pular ao conteúdo e `aria-current` na navegação, histórico exploratório rotulado como tal.
 
 Achados, do mais importante ao menor:
-1. **[Claude/Ricardo — não é da UI]** A `/proposta` exibe a nota "Rascunho para revisão do Ricardo" do topo do `automacao.md`. A nota vem do meu template e sai depois que o Ricardo revisar o conteúdo. — aberto (Claude)
-2. **[Ricardo decide]** Nome inconsistente: rodapé "Ricardo Dias" × README "Ricardo Barão". Definir o nome oficial e alinhar os dois. — aberto
+1. **Nota de rascunho na `/proposta` — ✅ resolvido.** O Ricardo revisou e aprovou o `automacao.md`, e a nota saiu do template (`3f834f9`).
+2. **Nome — ✅ resolvido.** Nome oficial definido pelo Ricardo: "Ricardo Barão", aplicado ao README e ao rodapé (`3f834f9`).
 3. **Similaridade exibida como porcentagem — corrigido.** Agora usa índice decimal (`0,44`), com explicação de que mede proximidade do vocabulário entre textos. Os percentuais de confiança do classificador permanecem como percentuais.
 4. **Intervalos de confiança pouco visíveis — corrigido.** Cada célula do heatmap mostra seu IC 95% em texto permanente, junto da proporção e quantidade. CSAT por grupo ganhou coluna de IC 95%; a região da tabela tem nome acessível e foco por teclado para rolagem. Os valores vêm dos intervalos já existentes no JSON.
 5. **Rótulos em minúsculas — corrigido.** O mapa aceita as chaves PT-BR dos relatórios. As partições usam rótulos explícitos: Treino, Validação e Teste.
@@ -37,7 +37,16 @@ Achados, do mais importante ao menor:
 
 **Versionamento das correções 3–7:** a tentativa pelo `scripts/git-add.sh` foi bloqueada ao iniciar o Git Bash (`couldn't create signal pipe`, erro 5). O diff está no workspace, sem stage/commit desta rodada. **[Codex → Claude]** Após revalidar, versionar somente os 11 arquivos da interface alterados/removidos e os registros em HANDOFF/PROCESS_LOG, com prefixo `[codex]`.
 
-**Ainda não verificado:** layout visual desktop/mobile e contraste real. Nenhum dos dois agentes tem navegador liberado ainda; fica para a etapa de screenshots.
+**Validação das correções 3–7 no ambiente do Claude:** `npm test` 54/54, `tsc`, lint e `next build` ok. Commit `784ac9f` (`[codex]`) e republicado.
+
+**Verificação visual (Claude, Edge headless via playwright-core, contra o deploy público):** 1440 px e 390 px, nas 4 páginas e nos fluxos de triagem individual e lote de 200. **Sem erro de console, sem HTTP ≥ 400 inesperado e sem rolagem horizontal.** Hierarquia, IC visível, motivo do roteamento e documento da proposta ok. Screenshots em `docs/screenshots/`.
+- [→ Codex, cosmético] No celular, o cabeçalho fixo (`.app-header { background: #fffffff7 }`) deixa o texto que rola por baixo levemente visível atrás da marca. Sugestão: fundo opaco (`#fff`) ou `backdrop-filter: blur()` em telas ≤ 760 px. — aberto, não bloqueia a entrega
+
+## Deploy
+- **Produção:** https://g4-challenge-002-ricardo-barao.vercel.app (time `unibrain`, projeto `g4-challenge-002-ricardo-barao`; decisão do Ricardo).
+- Publicado a partir de uma cópia limpa do último commit (git worktree), nunca do workspace com alterações pendentes.
+- `solution/app/vercel.json` fixa `framework: nextjs`. Sem ele, o projeto criado pela CLI ficou com preset "Other" e servia só `public/`, com 404 em tudo.
+- **Rascunho com LLM desligado no link público** (decisão do Ricardo). Liga só com `DRAFTS_ENABLED=true` + credencial (`lib/draft.ts → draftsEnabled`); sem isso `/api/draft` responde 503 com mensagem de demonstração. A UI já trata esse 503.
 
 ## Entregas disponíveis
 - ✅ `data/audit.json`, `data/model_metrics.json`, `data/routing_eval.json`, `data/diagnostico.json` — reais, v3

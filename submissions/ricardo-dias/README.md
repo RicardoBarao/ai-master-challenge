@@ -60,7 +60,15 @@ Antes de gerar gráficos, auditamos os dados. O Dataset 1 (métricas operacionai
 
 **Cenário de desperdício (30.000 tickets/ano, premissas editáveis):** ≈ 6.986 h/ano nas etapas analisadas, das quais **≈ 2.514 h/ano são recuperáveis**: triagem 816 h, follow-up 816 h, retrabalho 486 h e rascunhos 396 h. Mesmo no cenário mais pessimista da análise de sensibilidade, o ganho fica em 1.652 h/ano.
 
-_(Screenshots do protótipo — preencher após a UI final: `process-log/screenshots/`)_
+**Protótipo** (capturado do deploy público com o Edge em modo headless; sem erros de console nem rolagem horizontal em 1440 px e 390 px):
+
+| Diagnóstico | Triagem de um ticket |
+|---|---|
+| ![Diagnóstico](docs/screenshots/diagnostico.png) | ![Triagem](docs/screenshots/triagem.png) |
+| **Avaliação ao vivo em 200 tickets do teste** | **Evidências do modelo** |
+| ![Lote](docs/screenshots/triagem-lote.png) | ![Modelo](docs/screenshots/modelo.png) |
+| **Proposta de automação** | **Triagem no celular** |
+| ![Proposta](docs/screenshots/proposta.png) | ![Celular](docs/screenshots/triagem-mobile.png) |
 
 ### Recomendações
 
@@ -139,7 +147,7 @@ _(Ricardo: revisar e complementar com sua visão)_
 
 ## Evidências
 
-- [ ] Screenshots das conversas com IA
+- [x] Screenshots do protótipo publicado: [`docs/screenshots/`](docs/screenshots/)
 - [ ] Screen recording do workflow
 - [x] Chat exports: [`process-log/chat-exports/`](process-log/chat-exports/) (transcript do Claude Code)
 - [x] Git history: commits `[claude]` e `[codex]` mostram a evolução e a divisão de trabalho

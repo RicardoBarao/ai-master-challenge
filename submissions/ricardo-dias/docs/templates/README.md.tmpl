@@ -58,7 +58,15 @@ Antes de gerar gráficos, auditamos os dados. O Dataset 1 (métricas operacionai
 
 **Cenário de desperdício ({{annual_volume}} tickets/ano, premissas editáveis):** ≈ {{sc_total_hours}} h/ano nas etapas analisadas, das quais **≈ {{sc_recoverable}} h/ano são recuperáveis**: triagem {{w_triage}} h, follow-up {{w_followup}} h, retrabalho {{w_rework}} h e rascunhos {{w_drafting}} h. Mesmo no cenário mais pessimista da análise de sensibilidade, o ganho fica em {{sens_low}} h/ano.
 
-_(Screenshots do protótipo — preencher após a UI final: `process-log/screenshots/`)_
+**Protótipo** (capturado do deploy público com o Edge em modo headless; sem erros de console nem rolagem horizontal em 1440 px e 390 px):
+
+| Diagnóstico | Triagem de um ticket |
+|---|---|
+| ![Diagnóstico](docs/screenshots/diagnostico.png) | ![Triagem](docs/screenshots/triagem.png) |
+| **Avaliação ao vivo em 200 tickets do teste** | **Evidências do modelo** |
+| ![Lote](docs/screenshots/triagem-lote.png) | ![Modelo](docs/screenshots/modelo.png) |
+| **Proposta de automação** | **Triagem no celular** |
+| ![Proposta](docs/screenshots/proposta.png) | ![Celular](docs/screenshots/triagem-mobile.png) |
 
 ### Recomendações
 
@@ -133,7 +141,7 @@ _(Ricardo: revisar e complementar com sua visão)_
 
 ## Evidências
 
-- [ ] Screenshots das conversas com IA
+- [x] Screenshots do protótipo publicado: [`docs/screenshots/`](docs/screenshots/)
 - [ ] Screen recording do workflow
 - [x] Chat exports: [`process-log/chat-exports/`](process-log/chat-exports/) (transcript do Claude Code)
 - [x] Git history: commits `[claude]` e `[codex]` mostram a evolução e a divisão de trabalho
