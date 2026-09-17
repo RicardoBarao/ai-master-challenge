@@ -5,7 +5,7 @@
 ## Sobre mim
 
 - **Nome:** Ricardo Barão
-- **LinkedIn:** _(preencher)_
+- **LinkedIn:** https://www.linkedin.com/in/ricardobaraodias/
 - **Challenge escolhido:** 002 — Redesign de Suporte (Operações / CX)
 
 ---
@@ -154,4 +154,4 @@ Registro completo, com cada iteração: [`process-log/PROCESS_LOG.md`](process-l
 
 ---
 
-_Submissão enviada em: (preencher)_
+_Submissão enviada em: 16/09/2026 · PR [#133](https://github.com/Gestao-Quatro-Ponto-Zero/ai-master-challenge/pull/133)_

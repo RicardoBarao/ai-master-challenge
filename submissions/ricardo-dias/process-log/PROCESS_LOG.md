@@ -168,3 +168,10 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 - **Correções 3–7 do Codex:** conferi o diff (restrito à UI), rodei `npm test` 54/54, `tsc`, lint e build, commitei como `[codex]` (`784ac9f`) e republiquei.
 - **Verificação visual,** que nenhum agente tinha conseguido fazer: Edge instalado + `playwright-core` numa pasta temporária, contra o deploy público, em 1440 px e 390 px. Sem erro de console, sem HTTP ≥ 400 inesperado e sem rolagem horizontal. Olhei as imagens: hierarquia e números ok. Achado cosmético (cabeçalho levemente translúcido no celular) registrado para o Codex.
 - **Variação de amostra explicada:** um lote aleatório de 200 no deploy deu 82,5% de acerto geral e 92,6% nos automáticos; outro deu 87,5% e 97,6%. Com ~120 tickets automáticos por lote, a margem é de ±4 pontos. A avaliação publicada continua sendo o teste completo (7.176 tickets).
+
+### [claude] 2026-09-16 — Pull Request
+- Escopo conferido contra o upstream antes de publicar: 97 arquivos, **nenhum fora de `submissions/ricardo-dias/`**, sem `.env`, `node_modules`, `.next`, CSV ou `.vercel`.
+- **Decisões do Ricardo:** fork e PR pela conta pessoal **RicardoBarao**; PR aberto primeiro como rascunho para ele conferir a renderização; seção "O que eu adicionei" aprovada; LinkedIn informado.
+- Fork em `RicardoBarao/ai-master-challenge`, push da branch `submission/ricardo-dias` com credencial do `gh` só naquele comando (sem mudar a configuração global do git) e PR **#133** em rascunho. Depois, o `gh` voltou para a conta que estava ativa antes.
+- **Erro no caminho:** a primeira chamada de `gh repo fork` recusou a combinação de flags e o push falhou com "Repository not found". Nada foi publicado; refiz o fork e segui.
+- Com o LinkedIn preenchido e a data de envio, o Ricardo autorizou marcar o PR como pronto para avaliação.
