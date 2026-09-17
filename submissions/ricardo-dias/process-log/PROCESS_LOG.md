@@ -62,3 +62,15 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 **Achado que só apareceu por causa da explicabilidade:** o termo que mais pesa para "HR Support" num ticket de novo funcionário é **"belgrade"**, nome de escritório. O modelo aprendeu localização como sinal de categoria (correlação espúria). Vai para limitações e para a recomendação de re-treino com dados da operação.
 
 **Teste de ponta a ponta das rotas (dev server):** lote de 200 tickets aleatórios do holdout teve 88% de acerto geral e 99,2% nos roteados automaticamente. A escalação ("urgent/hacked/phishing") funciona e a rota de rascunho sem chave responde 503 com uma mensagem clara.
+
+### [claude] 2026-09-16 — Diagnóstico operacional (`02_diagnostico.py` → `diagnostico.json`)
+- **Testei antes de chamar algo de gargalo.** Status × canal (p = 0,77), × prioridade (p = 0,23), × tipo (p = 0,34) e × canal+prioridade (p = 0,50): nenhum é significativo. O "pior segmento" (Phone × Low, 72% não fechados) é indistinguível do acaso, e a UI é instruída pelo contrato (`segmentTests.significant`) a não destacá-lo.
+- **Drivers de CSAT:** Kruskal-Wallis com tamanho de efeito ε² ≤ 0,0014 em todas as variáveis, efeito praticamente nulo.
+- **Desperdício:** ~6.990 h/ano estimadas, das quais **~3.230 h/ano são recuperáveis** (≈ 1,8 agente em tempo integral; ≈ R$ 145 mil/ano a R$ 45/h), para 30 mil tickets/ano. Separei explicitamente:
+  - o que é **medido**: cobertura de 69,7% e acerto de 95,7% do roteamento automático, pendências de 34% e casos só-humanos de 40,7% (os dois últimos com a ressalva de que o mix é sintético);
+  - o que é **premissa editável**: minutos de triagem, taxa de roteamento errado, follow-ups, custo/hora. Cada premissa diz como validar ("cronometrar 50 triagens", "medir reatribuições no helpdesk").
+- A maior fatia recuperável **não é a IA generativa**: são follow-up automático (1.089 h) e triagem (1.045 h). Rascunho de resposta com LLM fica em 534 h, porque assumi economia conservadora de 30% e excluí os casos só-humanos. Isso orienta a priorização: começar pelo que é barato e mensurável.
+- **Erros pegos:**
+  1. A formatação brasileira de números quebrou a pontuação da frase pela segunda vez ("integral. ou R$ 145.282 por ano. com"). Troquei os `.replace` encadeados por formatadores dedicados (`br_int`, `br_pct`).
+  2. A primeira versão afirmava "fila sem reconhecimento ao cliente" para os abertos sem 1ª resposta. Isso é interpretação: no dataset sintético pode ser só a definição de "Open". Reescrevi com a ressalva.
+- **Calculadora da UI:** a fórmula existe em Python e em `lib/waste.ts`. `scripts/waste-check.ts` garante que as duas dão o mesmo resultado, para a calculadora nunca contradizer o relatório.
