@@ -46,13 +46,14 @@ def _default(o):
     raise TypeError(f"não serializável: {type(o)}")
 
 
-def write_json(name: str, payload, *, generated: bool = True) -> Path:
+def write_json(name: str, payload, *, generated: bool = True, compact: bool = False) -> Path:
     """Grava em app/data. `generatedAt` fica fora do diff determinístico só quando pedido."""
     APP_DATA.mkdir(parents=True, exist_ok=True)
     path = APP_DATA / name
     if generated and isinstance(payload, dict):
         payload = {"generatedAt": now_iso(), **payload}
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=_default), encoding="utf-8")
+    dump = dict(separators=(",", ":")) if compact else dict(indent=2)
+    path.write_text(json.dumps(payload, ensure_ascii=False, default=_default, **dump), encoding="utf-8")
     print(f"→ {path.relative_to(HERE.parents[1])}")
     return path
 

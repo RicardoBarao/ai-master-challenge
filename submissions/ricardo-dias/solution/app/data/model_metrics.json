@@ -1,0 +1,302 @@
+{
+  "generatedAt": "2026-09-17T01:07:13+00:00",
+  "split": {
+    "train": 38269,
+    "test": 9568,
+    "seed": 42
+  },
+  "candidates": [
+    {
+      "name": "Baseline: sempre a classe mais comum",
+      "accuracy": 0.2847,
+      "macroF1": 0.0554
+    },
+    {
+      "name": "TF-IDF + Complement Naive Bayes",
+      "accuracy": 0.8182,
+      "macroF1": 0.8078
+    },
+    {
+      "name": "TF-IDF + Linear SVM",
+      "accuracy": 0.867,
+      "macroF1": 0.8656
+    },
+    {
+      "name": "TF-IDF + Regressão Logística (vocab completo)",
+      "accuracy": 0.8651,
+      "macroF1": 0.865
+    },
+    {
+      "name": "TF-IDF + Regressão Logística (40k termos)",
+      "accuracy": 0.864,
+      "macroF1": 0.8652
+    },
+    {
+      "name": "TF-IDF + Regressão Logística (40k termos, exportado)",
+      "accuracy": 0.8638,
+      "macroF1": 0.8649
+    }
+  ],
+  "chosen": "TF-IDF + Regressão Logística (40k termos, exportado)",
+  "perClass": [
+    {
+      "label": "Hardware",
+      "precision": 0.827,
+      "recall": 0.8774,
+      "f1": 0.8514,
+      "support": 2724
+    },
+    {
+      "label": "HR Support",
+      "precision": 0.8632,
+      "recall": 0.8731,
+      "f1": 0.8681,
+      "support": 2183
+    },
+    {
+      "label": "Access",
+      "precision": 0.9048,
+      "recall": 0.894,
+      "f1": 0.8994,
+      "support": 1425
+    },
+    {
+      "label": "Miscellaneous",
+      "precision": 0.8287,
+      "recall": 0.8357,
+      "f1": 0.8322,
+      "support": 1412
+    },
+    {
+      "label": "Storage",
+      "precision": 0.9332,
+      "recall": 0.8559,
+      "f1": 0.8929,
+      "support": 555
+    },
+    {
+      "label": "Purchase",
+      "precision": 0.9622,
+      "recall": 0.8783,
+      "f1": 0.9183,
+      "support": 493
+    },
+    {
+      "label": "Internal Project",
+      "precision": 0.902,
+      "recall": 0.8467,
+      "f1": 0.8735,
+      "support": 424
+    },
+    {
+      "label": "Administrative rights",
+      "precision": 0.8826,
+      "recall": 0.7045,
+      "f1": 0.7836,
+      "support": 352
+    }
+  ],
+  "confusion": {
+    "labels": [
+      "Hardware",
+      "HR Support",
+      "Access",
+      "Miscellaneous",
+      "Storage",
+      "Purchase",
+      "Internal Project",
+      "Administrative rights"
+    ],
+    "matrix": [
+      [
+        2390,
+        119,
+        63,
+        102,
+        10,
+        11,
+        10,
+        19
+      ],
+      [
+        154,
+        1906,
+        33,
+        65,
+        8,
+        5,
+        10,
+        2
+      ],
+      [
+        67,
+        36,
+        1274,
+        33,
+        3,
+        1,
+        7,
+        4
+      ],
+      [
+        111,
+        77,
+        21,
+        1180,
+        9,
+        0,
+        10,
+        4
+      ],
+      [
+        37,
+        28,
+        4,
+        10,
+        475,
+        0,
+        0,
+        1
+      ],
+      [
+        33,
+        10,
+        2,
+        9,
+        2,
+        433,
+        1,
+        3
+      ],
+      [
+        26,
+        22,
+        2,
+        14,
+        1,
+        0,
+        359,
+        0
+      ],
+      [
+        72,
+        10,
+        9,
+        11,
+        1,
+        0,
+        1,
+        248
+      ]
+    ]
+  },
+  "coverage": [
+    {
+      "threshold": 0.3,
+      "coverage": 0.9979,
+      "accuracy": 0.865
+    },
+    {
+      "threshold": 0.35,
+      "coverage": 0.9911,
+      "accuracy": 0.8686
+    },
+    {
+      "threshold": 0.4,
+      "coverage": 0.9806,
+      "accuracy": 0.8734
+    },
+    {
+      "threshold": 0.45,
+      "coverage": 0.9621,
+      "accuracy": 0.8806
+    },
+    {
+      "threshold": 0.5,
+      "coverage": 0.9348,
+      "accuracy": 0.8926
+    },
+    {
+      "threshold": 0.55,
+      "coverage": 0.9018,
+      "accuracy": 0.9043
+    },
+    {
+      "threshold": 0.6,
+      "coverage": 0.8728,
+      "accuracy": 0.9141
+    },
+    {
+      "threshold": 0.65,
+      "coverage": 0.8415,
+      "accuracy": 0.9239
+    },
+    {
+      "threshold": 0.7,
+      "coverage": 0.8025,
+      "accuracy": 0.9361
+    },
+    {
+      "threshold": 0.75,
+      "coverage": 0.7664,
+      "accuracy": 0.9448
+    },
+    {
+      "threshold": 0.8,
+      "coverage": 0.7263,
+      "accuracy": 0.9557
+    },
+    {
+      "threshold": 0.85,
+      "coverage": 0.6786,
+      "accuracy": 0.9655
+    },
+    {
+      "threshold": 0.9,
+      "coverage": 0.6187,
+      "accuracy": 0.9752
+    },
+    {
+      "threshold": 0.95,
+      "coverage": 0.5291,
+      "accuracy": 0.9864
+    }
+  ],
+  "recommendedThreshold": 0.8,
+  "autoRouting": {
+    "coverage": 0.6967,
+    "accuracy": 0.9574
+  },
+  "crossDomain": {
+    "note": "Aplicado aos 8469 tickets do Dataset 1 (e-commerce de eletrônicos), o modelo treinado em TI interna passa do limiar de confiança em 53.9% dos casos, e 91% deles viram 'Hardware', inclusive pedidos de pagamento e reembolso. Confiança alta não protege contra texto de outro domínio. Por isso a rota automática também exige que o vocabulário do ticket seja conhecido pelo modelo. Esse guarda barra 98.6% dos tickets do Dataset 1 e só 4.3% dos tickets do próprio domínio. Em produção, re-treinar com o histórico rotulado da operação.",
+    "confidenceHistogram": [
+      {
+        "bucket": "< 30%",
+        "share": 0.0019
+      },
+      {
+        "bucket": "30–50%",
+        "share": 0.0933
+      },
+      {
+        "bucket": "50–70%",
+        "share": 0.2136
+      },
+      {
+        "bucket": "70–80%",
+        "share": 0.152
+      },
+      {
+        "bucket": "≥ 80%",
+        "share": 0.5393
+      }
+    ],
+    "confidentShare": 0.5393,
+    "confidentPredictedHardware": 0.9137,
+    "oodGuard": {
+      "threshold": 0.93,
+      "inDomainFlagged": 0.043,
+      "outDomainFlagged": 0.9859
+    }
+  }
+}

@@ -38,3 +38,27 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
   1. Um `.replace(",", ".")` para formatar milhares trocou também as vírgulas das frases ("8.469 tickets no arquivo. contra..."). Corrigi com um formatador só para números.
   2. Na auditoria inicial, a IA escreveu que o Dataset 2 vinha "sem stopwords". Olhando as amostras ("connection **with** icon", "coming next **his** name"), desconfiei e medi: **21,6% dos tokens são stopwords**. A afirmação estava errada e foi corrigida no JSON e no AGENTS.md, onde o Codex leria o fato errado.
 - Lição registrada: fatos passados a outro agente precisam estar medidos, porque o erro se propaga.
+
+### [claude] 2026-09-16 — Classificador (Dataset 2), export para TypeScript e rotas da API
+**Resultado** (holdout estratificado de 9.568 tickets, seed 42):
+
+| Modelo | Acurácia | F1 macro |
+|---|---|---|
+| Baseline (sempre "Hardware") | 28,5% | 0,055 |
+| TF-IDF + Complement NB | 81,8% | 0,808 |
+| TF-IDF + Linear SVM | 86,7% | 0,866 |
+| TF-IDF + Regressão Logística, **exportada** (40k termos, coeficientes podados) | **86,4%** | **0,865** |
+
+- **Escolhi a regressão logística e não o SVM** (0,3 ponto abaixo) porque ela dá probabilidade calibrada. Sem isso não existe limiar de confiança nem fila humana.
+- **Poda medida, não assumida:** zerei coeficientes com |coef| < ε para ε de 0,02 a 0,3. A acurácia não mudou, e o arquivo caiu de 7,1 MB para 2,85 MB. Usei ε = 0,2.
+- **Rota automática:** confiança ≥ 80% **e** vocabulário conhecido. Cobre **69,7%** dos tickets com **95,7%** de acerto; o resto vai para triagem humana.
+
+**Erros encontrados e corrigidos nesta etapa:**
+1. **O teste de paridade Python × TS falhou (99,35%).** A causa foi minha: o holdout foi exportado com o texto cortado em 800 caracteres e 134 tickets longos ficaram diferentes. Exportando o texto completo, a paridade foi a **100% (2.000 de 2.000)**, com diferença máxima de confiança de 2e-6. Sem esse teste, o app mostraria uma acurácia que não é a do modelo.
+2. **Um patch automatizado gravou `\b` como caractere de backspace** no regex do Python, e o limiar do guarda saiu 0,0 (não barrava nada). Pegamos porque o número era absurdo. O mesmo tipo de problema trocou o escape `̀` do TypeScript por caracteres literais. Corrigi e conferi byte a byte com `od`.
+3. **Premissa errada sobre o cruzamento de datasets.** Antes de rodar, eu tinha escrito que o modelo "teria pouca confiança" no Dataset 1. Medido, foi o contrário: **53,9% dos tickets de e-commerce passam do limiar de confiança, e 92% desses viram "Hardware"**, inclusive "Payment issue". **Confiança alta não protege contra texto de outro domínio.** Isso virou uma feature: um **guarda de domínio** (fração das palavras de conteúdo conhecidas pelo modelo) que barra 98,6% do Dataset 1 e só 4,3% do próprio domínio.
+4. **O guarda era rígido demais para texto digitado.** "Hi, my laptop screen is broken..." caía na revisão humana por causa de "my", pronome que o pré-processamento do Dataset 2 removeu. Passei a ignorar stopwords no cálculo, com a mesma lista em Python e TS, exportada no `model.json`.
+
+**Achado que só apareceu por causa da explicabilidade:** o termo que mais pesa para "HR Support" num ticket de novo funcionário é **"belgrade"**, nome de escritório. O modelo aprendeu localização como sinal de categoria (correlação espúria). Vai para limitações e para a recomendação de re-treino com dados da operação.
+
+**Teste de ponta a ponta das rotas (dev server):** lote de 200 tickets aleatórios do holdout teve 88% de acerto geral e 99,2% nos roteados automaticamente. A escalação ("urgent/hacked/phishing") funciona e a rota de rascunho sem chave responde 503 com uma mensagem clara.
