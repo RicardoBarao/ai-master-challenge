@@ -20,7 +20,7 @@ Antes de gerar gráficos, auditamos os dados. O Dataset 1 (métricas operacionai
 
 | Entrega | Onde |
 |---|---|
-| **Protótipo rodando** (diagnóstico, triagem ao vivo, evidências do modelo, proposta) | _(link do deploy — preencher)_ · código em [`solution/app`](solution/app) |
+| **Protótipo rodando** (diagnóstico, triagem ao vivo, evidências do modelo, proposta) | **https://g4-challenge-002-ricardo-barao.vercel.app** · código em [`solution/app`](solution/app) |
 | **Diagnóstico operacional** (onde trava, o que impacta satisfação, quanto desperdiçamos) | [`docs/diagnostico.md`](docs/diagnostico.md) |
 | **Proposta de automação** (o que automatizar, o que **não**, fluxo e ROI) | [`docs/automacao.md`](docs/automacao.md) |
 | **Classificador e roteamento** (protocolo de avaliação e resultados) | [`docs/modelo.md`](docs/modelo.md) |
