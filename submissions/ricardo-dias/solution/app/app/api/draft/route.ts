@@ -1,5 +1,5 @@
 import { streamText } from "ai";
-import { createDraftHandler } from "@/lib/draft";
+import { createDraftHandler, draftsEnabled } from "@/lib/draft";
 import { getModel, getPolicyRules } from "@/lib/server-data";
 
 export const maxDuration = 60;
@@ -20,7 +20,7 @@ const INSTRUCTIONS = [
 export const POST = createDraftHandler({
   getModel,
   getRules: getPolicyRules,
-  hasProvider: () => Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN),
+  hasProvider: () => draftsEnabled(process.env),
   generate: ({ text, category }) =>
     streamText({
       model: MODEL,

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { POST as classify } from "@/app/api/classify/route";
-import { createDraftHandler } from "@/lib/draft";
+import { createDraftHandler, draftsEnabled } from "@/lib/draft";
 import { loadModel, loadRules } from "@/lib/eval-data";
 import type { ClassifyResponse } from "@/lib/types";
 import { MAX_BATCH, MAX_TEXT_CHARS } from "@/lib/validation";
@@ -113,6 +113,16 @@ describe("POST /api/draft — política aplicada no servidor", () => {
     const { handler, generate } = makeHandler(false);
     expect((await handler(post({ text: OK_TEXT }))).status).toBe(503);
     expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("rascunho exige opt-in explícito: token OIDC ou chave sozinhos não ligam o LLM", () => {
+    expect(draftsEnabled({})).toBe(false);
+    expect(draftsEnabled({ VERCEL_OIDC_TOKEN: "t" })).toBe(false);
+    expect(draftsEnabled({ AI_GATEWAY_API_KEY: "k" })).toBe(false);
+    expect(draftsEnabled({ DRAFTS_ENABLED: "true" })).toBe(false);
+    expect(draftsEnabled({ DRAFTS_ENABLED: "1", AI_GATEWAY_API_KEY: "k" })).toBe(false);
+    expect(draftsEnabled({ DRAFTS_ENABLED: "true", AI_GATEWAY_API_KEY: "k" })).toBe(true);
+    expect(draftsEnabled({ DRAFTS_ENABLED: "true", VERCEL_OIDC_TOKEN: "t" })).toBe(true);
   });
 
   it("valida a entrada com as mesmas regras do classify", async () => {

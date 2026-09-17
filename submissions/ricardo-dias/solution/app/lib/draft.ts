@@ -7,6 +7,12 @@ import type { Model, PolicyRules } from "./model-schema";
 import type { Category } from "./types";
 import { readJsonObject, validateText } from "./validation";
 
+// Rascunho só liga com opt-in explícito. Na Vercel o token OIDC pode existir automaticamente;
+// sem DRAFTS_ENABLED=true um link público nunca gera chamadas pagas ao LLM.
+export function draftsEnabled(env: Record<string, string | undefined>): boolean {
+  return env.DRAFTS_ENABLED === "true" && Boolean(env.AI_GATEWAY_API_KEY || env.VERCEL_OIDC_TOKEN);
+}
+
 export interface DraftDeps {
   getModel: () => Model;
   getRules: () => PolicyRules;
@@ -34,7 +40,10 @@ export function createDraftHandler(deps: DraftDeps) {
     }
     if (!deps.hasProvider()) {
       return Response.json(
-        { error: "Rascunho desativado: configure AI_GATEWAY_API_KEY. A classificação e o roteamento funcionam sem LLM." },
+        {
+          error:
+            "Rascunho com IA desativado nesta versão de demonstração. A classificação e o roteamento funcionam sem LLM.",
+        },
         { status: 503 },
       );
     }

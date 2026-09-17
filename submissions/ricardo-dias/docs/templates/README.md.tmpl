@@ -84,7 +84,7 @@ npm install
 npm run dev          # http://localhost:3000
 npm test             # paridade TS × Python, política, APIs e calculadora (não precisa do Kaggle)
 ```
-Opcional: `AI_GATEWAY_API_KEY` em `solution/app/.env.local` habilita o rascunho de resposta. Sem ela, todo o resto funciona.
+Opcional: o rascunho de resposta com LLM só liga com opt-in explícito. Em `solution/app/.env.local`, defina `DRAFTS_ENABLED=true` e `AI_GATEWAY_API_KEY`. Sem isso (como no link público), todo o resto funciona e a tela informa que o rascunho está desativado.
 
 **Análise completa** (Python 3.12 via [uv](https://docs.astral.sh/uv/)):
 1. Baixe os CSVs do Kaggle ([Dataset 1](https://www.kaggle.com/datasets/suraj520/customer-support-ticket-dataset), [Dataset 2](https://www.kaggle.com/datasets/adisongoh/it-service-ticket-classification-dataset)) para uma pasta e aponte `DATA_DIR` para ela.
