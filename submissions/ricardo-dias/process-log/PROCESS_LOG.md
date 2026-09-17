@@ -185,3 +185,13 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
   3. Higiene: `solution/app/README.md` ainda era o texto padrão do create-next-app. Foi trocado por setup, scripts, variáveis, estrutura e garantias testadas.
 - **Oferecido e não aplicado, por decisão do Ricardo:** exportar as sessões locais do Codex.
 - **Comunicação:** o PR é o único canal aceito. O acompanhamento de comentários no PR e do e-mail fica com o Ricardo.
+
+### [claude] 2026-09-16 — Export da sessão do Codex
+- **Pedido do Ricardo:** incluir as sessões do Codex como evidência (a banca já pediu chat exports a outro candidato).
+- **Leitura antes de publicar:** das sessões locais recentes, **só uma é deste projeto** (`cwd C:\Users\rsdias\g4`, modelo `gpt-6-astra`, raciocínio `xhigh`). As demais eram de outro diretório e outro trabalho e **não foram exportadas**.
+- **Conversor novo:** `process-log/export_codex_transcript.py` reaproveita a sanitização do transcript do Claude. Traz 14 mensagens do Ricardo, as respostas do Codex e 79 chamadas de ferramenta resumidas. Omite o que o Codex injeta automaticamente como contexto (perfil pessoal "DEV", AGENTS.md global, lista de plugins) e os blocos de raciocínio, que são criptografados.
+- **Varredura antes do commit:**
+  - nenhum e-mail, token, nome de conta ou instrução injetada no arquivo;
+  - as ocorrências de "vite" eram o pacote `node_modules/vite` em stack traces;
+  - os caminhos citados são do projeto ou do cache do npm.
+- **O que o registro mostra:** o Codex começou como consultor em modo leitura, propôs as melhorias que viraram a revisão cruzada do backend, planejou e construiu a interface, fez um estudo de aderência ao desafio e corrigiu os itens 3–7 da revisão da UI.
