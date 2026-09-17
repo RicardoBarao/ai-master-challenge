@@ -11,6 +11,7 @@ from scipy import stats
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS, TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.pipeline import make_pipeline
 
 from common import SEED, load_d1, load_d2, r, write_json
 
@@ -52,7 +53,8 @@ def audit_d1(d1: pd.DataFrame) -> tuple[dict, list[dict]]:
         "evidence": "Tipo, prioridade, canal, status e nota de CSAT têm frequências estatisticamente iguais "
                     f"(qui-quadrado, menor {fmt_p(min(uniform.values()))}).",
         "metric": r(min(uniform.values()), 3),
-        "implication": "Operações reais nunca têm 25% de tickets críticos. Os mixes não representam uma operação.",
+        "implication": "É improvável que uma operação real tenha ~25% dos tickets em cada prioridade e canal. "
+                       "Tratamos os mixes como artefato do gerador, não como retrato de uma operação.",
         "severity": "bloqueante",
     })
 
@@ -83,28 +85,31 @@ def audit_d1(d1: pd.DataFrame) -> tuple[dict, list[dict]]:
     findings.append({
         "id": "d1-csat",
         "dataset": "D1",
-        "title": "Nenhuma variável explica a satisfação",
-        "evidence": f"CSAT testado contra tipo, prioridade, canal, gênero, produto, duração e idade: "
-                    f"menor {fmt_p(min(drivers.values()))} (nenhum efeito significativo).",
+        "title": "Não detectamos associação entre CSAT e as variáveis testadas",
+        "evidence": f"Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos "
+                    f"{len(closed)} tickets fechados: menor {fmt_p(min(drivers.values()))}.",
         "metric": r(min(drivers.values()), 3),
-        "implication": "Qualquer 'driver de satisfação' extraído deste dataset seria ruído apresentado como insight.",
+        "implication": "Não temos base para apontar um 'driver de satisfação' com estes dados. Isso não prova ausência de "
+                       "efeito numa operação real; efeitos pequenos podem não ser detectáveis (ver diagnóstico).",
         "severity": "bloqueante",
     })
 
     desc = d1["Ticket Description"]
     placeholder = desc.str.contains(r"\{product_purchased\}").mean()
-    X = TfidfVectorizer(min_df=2, ngram_range=(1, 2), sublinear_tf=True).fit_transform(
-        d1["Ticket Subject"] + " " + desc)
+    # Vetorizador dentro da Pipeline: vocabulário e idf são ajustados só no fold de treino (sem vazamento).
+    pipeline = make_pipeline(TfidfVectorizer(min_df=2, ngram_range=(1, 2), sublinear_tf=True),
+                             LogisticRegression(max_iter=2000))
     y = d1["Ticket Type"]
-    acc = cross_val_score(LogisticRegression(max_iter=2000), X, y,
+    acc = cross_val_score(pipeline, d1["Ticket Subject"] + " " + desc, y,
                           cv=StratifiedKFold(5, shuffle=True, random_state=SEED)).mean()
     chance = y.value_counts(normalize=True).max()
     findings.append({
         "id": "d1-text",
         "dataset": "D1",
-        "title": "Texto dos tickets não carrega sinal",
+        "title": "Não detectamos sinal no texto para prever o tipo do ticket",
         "evidence": f"Placeholder literal {{product_purchased}} em {pct(placeholder)} das descrições; resoluções são frases aleatórias. "
-                    f"Um classificador treinado no texto acerta o tipo em {pct(acc)}, contra {pct(chance)} chutando a classe mais comum.",
+                    f"TF-IDF + regressão logística (validação cruzada de 5 folds, vetorizador ajustado dentro de cada fold) "
+                    f"acerta o tipo em {pct(acc)}, contra {pct(chance)} chutando a classe mais comum.",
         "metric": r(acc),
         "implication": "O classificador do protótipo é treinado e avaliado no Dataset 2, que tem texto real.",
         "severity": "bloqueante",
@@ -126,12 +131,13 @@ def audit_d1(d1: pd.DataFrame) -> tuple[dict, list[dict]]:
     findings.append({
         "id": "d1-backlog",
         "dataset": "D1",
-        "title": "O que é confiável: backlog e pendências",
-        "evidence": f"{pct(1 - status_counts['Closed'] / n)} dos tickets não estão fechados: "
-                    f"{pct(status_counts['Open'] / n)} abertos, {pct(open_frt)} deles sem nenhuma 1ª resposta, "
+        "title": "Status dos tickets no arquivo (descritivo)",
+        "evidence": f"{pct(1 - status_counts['Closed'] / n)} dos registros não estão fechados: "
+                    f"{pct(status_counts['Open'] / n)} abertos ({pct(open_frt)} deles sem registro de 1ª resposta) "
                     f"e {pct(status_counts['Pending Customer Response'] / n)} aguardando o cliente.",
         "metric": r(1 - status_counts["Closed"] / n),
-        "implication": "Estes são os sinais usados no diagnóstico, com a ressalva de que o mix também é uniforme.",
+        "implication": "Contagem do arquivo, não evidência de gargalo: o mix de status também é uniforme e não há datas "
+                       "de abertura para medir envelhecimento da fila.",
         "severity": "info",
     })
 

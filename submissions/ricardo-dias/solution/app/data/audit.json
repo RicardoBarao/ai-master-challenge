@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T00:48:50+00:00",
+  "generatedAt": "2026-09-17T01:31:51+00:00",
   "d1": {
     "rows": 8469,
     "columns": 17,
@@ -73,7 +73,7 @@
       "title": "Distribuições uniformes: padrão de dado sintético",
       "evidence": "Tipo, prioridade, canal, status e nota de CSAT têm frequências estatisticamente iguais (qui-quadrado, menor p = 0,11).",
       "metric": 0.115,
-      "implication": "Operações reais nunca têm 25% de tickets críticos. Os mixes não representam uma operação.",
+      "implication": "É improvável que uma operação real tenha ~25% dos tickets em cada prioridade e canal. Tratamos os mixes como artefato do gerador, não como retrato de uma operação.",
       "severity": "bloqueante"
     },
     {
@@ -88,18 +88,18 @@
     {
       "id": "d1-csat",
       "dataset": "D1",
-      "title": "Nenhuma variável explica a satisfação",
-      "evidence": "CSAT testado contra tipo, prioridade, canal, gênero, produto, duração e idade: menor p = 0,25 (nenhum efeito significativo).",
+      "title": "Não detectamos associação entre CSAT e as variáveis testadas",
+      "evidence": "Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos 2769 tickets fechados: menor p = 0,25.",
       "metric": 0.254,
-      "implication": "Qualquer 'driver de satisfação' extraído deste dataset seria ruído apresentado como insight.",
+      "implication": "Não temos base para apontar um 'driver de satisfação' com estes dados. Isso não prova ausência de efeito numa operação real; efeitos pequenos podem não ser detectáveis (ver diagnóstico).",
       "severity": "bloqueante"
     },
     {
       "id": "d1-text",
       "dataset": "D1",
-      "title": "Texto dos tickets não carrega sinal",
-      "evidence": "Placeholder literal {product_purchased} em 100,0% das descrições; resoluções são frases aleatórias. Um classificador treinado no texto acerta o tipo em 18,8%, contra 20,7% chutando a classe mais comum.",
-      "metric": 0.1875,
+      "title": "Não detectamos sinal no texto para prever o tipo do ticket",
+      "evidence": "Placeholder literal {product_purchased} em 100,0% das descrições; resoluções são frases aleatórias. TF-IDF + regressão logística (validação cruzada de 5 folds, vetorizador ajustado dentro de cada fold) acerta o tipo em 18,7%, contra 20,7% chutando a classe mais comum.",
+      "metric": 0.1869,
       "implication": "O classificador do protótipo é treinado e avaliado no Dataset 2, que tem texto real.",
       "severity": "bloqueante"
     },
@@ -124,10 +124,10 @@
     {
       "id": "d1-backlog",
       "dataset": "D1",
-      "title": "O que é confiável: backlog e pendências",
-      "evidence": "67,3% dos tickets não estão fechados: 33,3% abertos, 100,0% deles sem nenhuma 1ª resposta, e 34,0% aguardando o cliente.",
+      "title": "Status dos tickets no arquivo (descritivo)",
+      "evidence": "67,3% dos registros não estão fechados: 33,3% abertos (100,0% deles sem registro de 1ª resposta) e 34,0% aguardando o cliente.",
       "metric": 0.673,
-      "implication": "Estes são os sinais usados no diagnóstico, com a ressalva de que o mix também é uniforme.",
+      "implication": "Contagem do arquivo, não evidência de gargalo: o mix de status também é uniforme e não há datas de abertura para medir envelhecimento da fila.",
       "severity": "info"
     },
     {
