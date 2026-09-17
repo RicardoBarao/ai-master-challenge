@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T01:31:51+00:00",
+  "generatedAt": "2026-09-17T01:50:40+00:00",
   "d1": {
     "rows": 8469,
     "columns": 17,
@@ -80,7 +80,7 @@
       "id": "d1-times",
       "dataset": "D1",
       "title": "Tempos de resposta e resolução não são utilizáveis",
-      "evidence": "Os campos são timestamps (não durações), todos numa janela de 27h, sem horário de abertura. Em 49,3% dos fechados (1365 de 2769) a resolução é anterior à 1ª resposta.",
+      "evidence": "Os campos são timestamps (não durações), todos numa janela de 27h, sem horário de abertura. Em 49,3% dos fechados (1.365 de 2.769) a resolução é anterior à 1ª resposta.",
       "metric": 0.493,
       "implication": "Não dá para medir gargalo de tempo por canal/prioridade com honestidade. O diagnóstico usa backlog e pendências.",
       "severity": "bloqueante"
@@ -89,7 +89,7 @@
       "id": "d1-csat",
       "dataset": "D1",
       "title": "Não detectamos associação entre CSAT e as variáveis testadas",
-      "evidence": "Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos 2769 tickets fechados: menor p = 0,25.",
+      "evidence": "Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos 2.769 tickets fechados: menor p = 0,25.",
       "metric": 0.254,
       "implication": "Não temos base para apontar um 'driver de satisfação' com estes dados. Isso não prova ausência de efeito numa operação real; efeitos pequenos podem não ser detectáveis (ver diagnóstico).",
       "severity": "bloqueante"

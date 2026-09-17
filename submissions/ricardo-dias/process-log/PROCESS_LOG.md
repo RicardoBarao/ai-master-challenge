@@ -95,7 +95,7 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 | F1 macro | 0,865 | **0,856** (0,846–0,864) |
 | Roteamento automático | 69,7% (só confiança + guarda) | **65,3%** (política completa da API) |
 | Acerto nos automáticos | 95,7% | **94,9%** (94,3–95,6%) |
-| Horas recuperáveis/ano (cenário) | ~3.230 | **~2.515** (desconta resíduos) |
+| Horas recuperáveis/ano (cenário) | ~3.230 | **~2.514** (desconta resíduos) |
 
 **Leitura honesta:**
 - Os números caíram um pouco, como era de se esperar quando a avaliação deixa de "ver" as escolhas.
@@ -114,3 +114,14 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 - Os leitores de UI do Codex (`lib/data.ts`) aceitam os quatro relatórios v3 (teste temporário).
 
 **Sobre trabalhar com dois agentes:** a revisão do Codex pegou problemas metodológicos que eu não tinha visto, porque eu estava perto demais do código. O valor esteve em *verificar* cada apontamento, e não em aceitar todos: um deles era parcialmente um artefato de timing entre os agentes.
+
+### [claude] 2026-09-16 — README da submissão e export do transcript
+- **README** (`README.md`) segue o template do G4. É gerado por `05_report.py` a partir de `docs/templates/README.md.tmpl`, então todo número vem dos JSONs e não diverge dos docs. Campos que dependem do Ricardo ficam marcados para preencher: nome completo, LinkedIn, link do deploy, screenshots e data de envio. A seção "O que eu adicionei" está rascunhada a partir do que aconteceu na sessão, para o Ricardo revisar.
+- **Transcript** (`process-log/chat-exports/claude-code-sessao-principal.md`) é gerado por `process-log/export_transcript.py` a partir do `.jsonl` da sessão. Traz mensagens (inclusive as enviadas no meio de um turno), respostas, chamadas de ferramenta com saída resumida e planos aprovados. Omite contexto de sistema e conteúdo integral de arquivos, que está no git.
+- **Sanitização verificada com grep:** e-mails, caminho e nome do usuário do Windows e nome da conta de trabalho do GitHub foram trocados por marcadores. As únicas ocorrências restantes dos termos buscados são os próprios comandos de verificação registrados no transcript.
+- **Pedido do Codex atendido:** `05_report.py` também gera `solution/app/public/docs/automacao.md` (cópia servida pela UI, porque `docs/` fica fora do Root Directory no deploy). Conferi que é idêntica ao doc e à cópia manual que o Codex tinha feito.
+- **Erros pegos na revisão do README gerado:**
+  1. O resumo dizia "nenhuma associação detectável", fora da redação combinada; trocado por "não detectamos associação".
+  2. As contagens da auditoria saíam sem separador de milhar.
+  3. O total recuperável é 2.514 h (arredondamento de 2.514,5), mas o log dizia ~2.515.
+  4. Uma frase atribuía ao Ricardo um motivo para ter interrompido um comando, e esse motivo nunca foi dito. Removida: não inventar intenção de pessoa.

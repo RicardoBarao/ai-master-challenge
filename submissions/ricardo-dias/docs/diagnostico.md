@@ -13,8 +13,8 @@ O Diretor de Operações fez três perguntas: **onde o fluxo trava**, **o que im
 O Dataset 1 (métricas operacionais, 8.469 tickets) tem padrão de dado sintético. Os pontos que mais afetam o diagnóstico:
 
 - **Distribuições uniformes:** Tipo, prioridade, canal, status e nota de CSAT têm frequências estatisticamente iguais (qui-quadrado, menor p = 0,11).
-- **Tempos inválidos:** Os campos são timestamps (não durações), todos numa janela de 27h, sem horário de abertura. Em 49,3% dos fechados (1365 de 2769) a resolução é anterior à 1ª resposta.
-- **Satisfação:** Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos 2769 tickets fechados: menor p = 0,25.
+- **Tempos inválidos:** Os campos são timestamps (não durações), todos numa janela de 27h, sem horário de abertura. Em 49,3% dos fechados (1.365 de 2.769) a resolução é anterior à 1ª resposta.
+- **Satisfação:** Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos 2.769 tickets fechados: menor p = 0,25.
 - **Texto:** Placeholder literal {product_purchased} em 100,0% das descrições; resoluções são frases aleatórias. TF-IDF + regressão logística (validação cruzada de 5 folds, vetorizador ajustado dentro de cada fold) acerta o tipo em 18,7%, contra 20,7% chutando a classe mais comum.
 
 Por isso **não apontamos um "canal gargalo" nem um "driver de satisfação"**. Com estes dados, isso seria apresentar ruído como insight. O que entregamos é o que o arquivo sustenta, somado a uma metodologia pronta para rodar sobre os dados reais da operação.

@@ -69,7 +69,7 @@ def audit_d1(d1: pd.DataFrame) -> tuple[dict, list[dict]]:
         "dataset": "D1",
         "title": "Tempos de resposta e resolução não são utilizáveis",
         "evidence": f"Os campos são timestamps (não durações), todos numa janela de {span_h:.0f}h, sem horário de abertura. "
-                    f"Em {pct(neg / len(closed_hours))} dos fechados ({neg} de {len(closed_hours)}) a resolução é anterior à 1ª resposta.",
+                    f"Em {pct(neg / len(closed_hours))} dos fechados ({thousands(neg)} de {thousands(len(closed_hours))}) a resolução é anterior à 1ª resposta.",
         "metric": r(neg / len(closed_hours)),
         "implication": "Não dá para medir gargalo de tempo por canal/prioridade com honestidade. O diagnóstico usa backlog e pendências.",
         "severity": "bloqueante",
@@ -87,7 +87,7 @@ def audit_d1(d1: pd.DataFrame) -> tuple[dict, list[dict]]:
         "dataset": "D1",
         "title": "Não detectamos associação entre CSAT e as variáveis testadas",
         "evidence": f"Kruskal-Wallis (tipo, prioridade, canal, gênero, produto) e Spearman (duração, idade) nos "
-                    f"{len(closed)} tickets fechados: menor {fmt_p(min(drivers.values()))}.",
+                    f"{thousands(len(closed))} tickets fechados: menor {fmt_p(min(drivers.values()))}.",
         "metric": r(min(drivers.values()), 3),
         "implication": "Não temos base para apontar um 'driver de satisfação' com estes dados. Isso não prova ausência de "
                        "efeito numa operação real; efeitos pequenos podem não ser detectáveis (ver diagnóstico).",

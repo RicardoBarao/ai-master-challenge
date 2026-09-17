@@ -13,6 +13,8 @@ from common import APP_DATA, HERE
 
 DOCS = HERE.parents[1] / "docs"
 TEMPLATES = DOCS / "templates"
+# Cópias servidas pela UI: docs/ fica fora do Root Directory do app no deploy (pedido do Codex no HANDOFF).
+PUBLIC_COPIES = {"automacao.md": APP_DATA.parent / "public" / "docs" / "automacao.md"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}")
 
 ROUTE_PT = {"auto": "Automático", "revisao_humana": "Revisão humana", "escalar": "Escalação"}
@@ -161,9 +163,16 @@ def render(template: str, ctx: dict[str, str], name: str) -> str:
 def main() -> None:
     ctx = build_context()
     for tmpl in sorted(TEMPLATES.glob("*.md.tmpl")):
-        out = DOCS / tmpl.name.removesuffix(".tmpl")
-        out.write_text(render(tmpl.read_text(encoding="utf-8"), ctx, tmpl.name), encoding="utf-8")
-        print(f"→ docs/{out.name}")
+        # README.md vai para a raiz da submissão; os demais para docs/.
+        out = (DOCS.parent if tmpl.name == "README.md.tmpl" else DOCS) / tmpl.name.removesuffix(".tmpl")
+        rendered = render(tmpl.read_text(encoding="utf-8"), ctx, tmpl.name)
+        out.write_text(rendered, encoding="utf-8")
+        print(f"→ {out.relative_to(DOCS.parent)}")
+        if out.name in PUBLIC_COPIES:
+            copy = PUBLIC_COPIES[out.name]
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            copy.write_text(rendered, encoding="utf-8")
+            print(f"→ {copy.relative_to(HERE.parents[1])}")
 
 
 if __name__ == "__main__":
