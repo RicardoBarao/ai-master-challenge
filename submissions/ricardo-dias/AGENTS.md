@@ -38,7 +38,7 @@ Texto voltado ao usuário: **PT-BR**. Código e identificadores: inglês.
 **Dataset 2 — `all_tickets_processed_improved_v3.csv`: é bom para classificação.**
 - 47.837 linhas, 8 classes: Hardware 13.617, HR Support 10.915, Access 7.125, Miscellaneous 7.060, Storage 2.777, Purchase 2.464, Internal Project 2.119, Administrative rights 1.760.
 - 0 duplicatas e 0 rótulos conflitantes.
-- O texto já vem pré-processado: minúsculas, sem dígitos, sem stopwords, anonimizado. Mediana de 26 palavras.
+- O texto já vem parcialmente pré-processado: minúsculas, sem dígitos, anonimizado, **com stopwords** (21,6% dos tokens). Mediana de 26 palavras.
 - **Consequência para a UI:** textos colados pelo usuário precisam passar pela mesma normalização. Ela fica em `lib/classifier.ts`.
 
 ## Estrutura

@@ -31,3 +31,10 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 - A pedido do Ricardo, criei `AGENTS.md` (lido pelo Codex) e `CLAUDE.md` (importa o mesmo arquivo), com fatos verificados, regras, lanes por caminho, backlog do Codex e regras de git para dois agentes na mesma branch.
 - Defini os contratos de dados em `solution/app/lib/types.ts` *antes* de construir. Assim a UI (Codex) e a análise (Claude) avançam juntas sem se bloquear.
 - `HANDOFF.md` funciona como quadro de coordenação.
+
+### [claude] 2026-09-16 — `01_audit.py` → `app/data/audit.json`
+- Transformei a auditoria exploratória em script reprodutível. Cada achado sai com evidência numérica, implicação e severidade, para a UI citar sem reinterpretar.
+- **Erros da IA pegos na revisão da saída:**
+  1. Um `.replace(",", ".")` para formatar milhares trocou também as vírgulas das frases ("8.469 tickets no arquivo. contra..."). Corrigi com um formatador só para números.
+  2. Na auditoria inicial, a IA escreveu que o Dataset 2 vinha "sem stopwords". Olhando as amostras ("connection **with** icon", "coming next **his** name"), desconfiei e medi: **21,6% dos tokens são stopwords**. A afirmação estava errada e foi corrigida no JSON e no AGENTS.md, onde o Codex leria o fato errado.
+- Lição registrada: fatos passados a outro agente precisam estar medidos, porque o erro se propaga.
