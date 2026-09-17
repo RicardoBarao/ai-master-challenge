@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Suporte Inteligente — protótipo (Next.js)
 
-## Getting Started
+Interface e API do Challenge 002: diagnóstico, triagem de tickets com política de roteamento, evidências do modelo e proposta de automação.
 
-First, run the development server:
+**Publicado:** https://g4-challenge-002-ricardo-barao.vercel.app · Visão geral da submissão: [`../../README.md`](../../README.md)
+
+## Rodar localmente
+
+Requisitos: Node 24.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Não precisa de Kaggle nem de Python: o modelo e os relatórios já estão versionados em `data/`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm test` | Vitest: paridade TypeScript × scikit-learn no conjunto de teste, formato do modelo, cada ramo da política de roteamento, validação das APIs, bloqueio de rascunho no servidor, calculadora e componentes da UI |
+| `npm run lint` | ESLint |
+| `npm run build` | Build de produção (inclui checagem de tipos) |
+| `npm run eval:routing` | Mede o roteamento completo com as funções da API e grava `data/routing_eval.json` (requer os artefatos de `../analysis/artifacts`) |
 
-## Learn More
+Para regenerar tudo a partir dos CSVs (análise → modelo → avaliação → diagnóstico → docs → testes): `bash ../pipeline.sh`.
 
-To learn more about Next.js, take a look at the following resources:
+## Variáveis de ambiente
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Todas são opcionais. Sem nenhuma delas, a classificação, o roteamento e a avaliação em lote funcionam normalmente.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variável | Efeito |
+|---|---|
+| `DRAFTS_ENABLED=true` | Liga o rascunho de resposta com LLM. Sem ela, `/api/draft` responde 503 (como no link público, para não gerar custo) |
+| `AI_GATEWAY_API_KEY` | Credencial do Vercel AI Gateway, exigida junto com `DRAFTS_ENABLED=true` fora da Vercel |
+| `DRAFT_MODEL` | Modelo do rascunho (padrão: `anthropic/claude-haiku-4.5`) |
 
-## Deploy on Vercel
+## Estrutura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+app/                 páginas: / (diagnóstico), /triagem, /modelo, /proposta
+app/api/classify     POST { text } ou { texts: [...] } → categoria, confiança, rota e motivo
+app/api/sample       GET ?n= → tickets aleatórios do conjunto de TESTE
+app/api/draft        POST { text } → rascunho em streaming; política reaplicada no servidor
+components/          UI (e testes de UI em components/__tests__)
+lib/classifier.ts    inferência TF-IDF + regressão logística e política de roteamento (decideRoute)
+lib/policy-rules.json regras escritas à mão (termos de escalação, categorias sempre humanas)
+lib/model-schema.ts  validação do model.json (versão e formato) ao carregar
+lib/validation.ts    limites e mensagens de erro das APIs (400/413, sem cortes silenciosos)
+lib/waste.ts         calculadora do cenário (espelho do Python, com teste de igualdade)
+data/                artefatos gerados pela análise; não editar à mão
+tests/               testes de backend
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Garantias que os testes verificam
+
+- A inferência em TypeScript reproduz rótulo e confiança do scikit-learn em todo o conjunto de teste.
+- A política da API concorda 100% com a réplica usada para escolher os limiares.
+- Um ticket escalado nunca aciona o provedor de LLM, mesmo se o cliente forjar a categoria.
+- Chamada unitária e em lote retornam o mesmo resultado para o mesmo texto.
+- Entradas inválidas ou acima do limite são recusadas com mensagem clara, nunca truncadas.
+
+## Deploy
+
+Vercel, com Root Directory em `solution/app`. O `vercel.json` fixa o framework Next.js (sem ele, um projeto criado pela CLI pode ficar com o preset "Other" e responder 404). Os JSONs lidos em tempo de execução entram no bundle via `outputFileTracingIncludes` (`next.config.ts`).
+
+> `AGENTS.md` e `CLAUDE.md` nesta pasta são gerados pelo próprio Next.js 16 com orientações para agentes de código.

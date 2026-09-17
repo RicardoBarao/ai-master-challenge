@@ -54,6 +54,52 @@ def table(header: list[str], rows: list[list[str]]) -> str:
     return "\n".join(lines)
 
 
+EXAMPLE_WORDS = (10, 40)
+EXAMPLE_CHARS = 170
+
+
+def data_examples() -> str:
+    """Tickets reais do TESTE que ilustram cada caso "não automatizar".
+
+    Regra fixa, sem escolha manual: em cada situação, o ticket de menor id com 10–40 palavras
+    (ou o de menor id, se nenhum couber na faixa). Rotas e previsões vêm de python_predictions.json,
+    que concorda 100% com a política TypeScript da API.
+    """
+    artifacts = HERE / "artifacts"
+    tickets = json.loads((artifacts / "test_split.json").read_text(encoding="utf-8"))["items"]
+    preds = {p["id"]: p for p in json.loads((artifacts / "python_predictions.json").read_text(encoding="utf-8"))["test"]}
+    rules = json.loads((APP_DATA.parent / "lib" / "policy-rules.json").read_text(encoding="utf-8"))
+    admin = rules["adminRightsCategory"]
+    situations = [
+        ("Termo de risco/urgência", lambda t, p: p["reasonCode"] == "escalation_terms",
+         "Escalado para atendente sênior, sem rascunho de IA."),
+        ("Pedido de privilégio pego pela regra de risco", lambda t, p: p["reasonCode"] == "admin_rights_risk" and t["label"] == admin,
+         "O modelo previu outra categoria, mas a probabilidade de privilégio passou do limiar: aprovação humana."),
+        ("Pedido de privilégio que escapou", lambda t, p: t["label"] == admin and p["route"] == "auto",
+         "Exemplo do vazamento residual: por isso conceder acesso nunca é automático, mesmo após o roteamento."),
+        ("Texto fora do padrão do treino", lambda t, p: p["reasonCode"] == "out_of_domain",
+         "Vocabulário pouco conhecido pelo modelo: triagem humana."),
+        ("Baixa confiança", lambda t, p: p["reasonCode"] == "low_confidence",
+         "O modelo não tem certeza suficiente: triagem humana confirma a categoria."),
+    ]
+    rows = []
+    for name, match, why in situations:
+        candidates = sorted((t for t in tickets if match(t, preds[t["id"]])), key=lambda t: t["id"])
+        if not candidates:
+            raise SystemExit(f"sem exemplo para: {name}")
+        in_range = [t for t in candidates if EXAMPLE_WORDS[0] <= len(t["text"].split()) <= EXAMPLE_WORDS[1]]
+        t = (in_range or candidates)[0]
+        p = preds[t["id"]]
+        text = t["text"] if len(t["text"]) <= EXAMPLE_CHARS else t["text"][:EXAMPLE_CHARS].rsplit(" ", 1)[0] + "…"
+        if p["reasonCode"] == "escalation_terms":
+            tokens = set(re.findall(r"\b[a-z]{2,}\b", re.sub(r"[^a-z]+", " ", t["text"].lower())))
+            hits = [w for w in rules["escalationTerms"] if w in tokens]
+            why = f"Termo(s) detectado(s): {', '.join(hits)}. " + why
+        rows.append([f"**{name}**", f"#{t['id']}: _{text}_", f"{t['label']} → {p['label']}",
+                     pct(p["confidence"]), why])
+    return table(["Situação", "Ticket real (teste, texto já pré-processado)", "Real → previsto", "Confiança", "Tratamento"], rows)
+
+
 def build_context() -> dict[str, str]:
     audit, metrics, routing, diag = load("audit.json"), load("model_metrics.json"), load("routing_eval.json"), load("diagnostico.json")
     t, sel, rt, rv = metrics["test"], metrics["selection"], routing["test"], routing["validation"]
@@ -148,6 +194,7 @@ def build_context() -> dict[str, str]:
         "w_followup": num(waste["followup"]["recoverableHoursPerYear"]), "w_drafting": num(waste["drafting"]["recoverableHoursPerYear"]),
         "sens_low": num(min(s["recoverableHoursPerYear"] for s in sc["sensitivity"])),
         "hourly_cost": num(a["hourly_cost"]["value"]), "annual_volume": num(a["annual_volume"]["value"]),
+        "table_examples": data_examples(),
     }
     return ctx
 

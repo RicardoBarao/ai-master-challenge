@@ -118,6 +118,19 @@ Opcional: o rascunho de resposta com LLM só liga com opt-in explícito. Em `sol
 5. **Revisão cruzada:** pedi ao Codex para revisar o backend antes de ampliar funcionalidades. Ele apontou 6 problemas. Cada um foi verificado e corrigido, e os números publicados mudaram (tabela "antes × depois" no process log).
 6. Interface construída pelo Codex sobre os contratos, enquanto o backend era corrigido.
 
+### Quantas iterações foram necessárias
+
+Não foi um prompt → uma resposta → submissão. Contagens verificáveis no histórico:
+
+| Iteração | Quantas | O que mudou |
+|---|---|---|
+| Commits incrementais na branch | 20+ | Prefixos `[claude]` e `[codex]` mostram quem fez o quê e quando |
+| Rodadas de avaliação do modelo | 3 | Holdout único (exploratório) → guarda de domínio e ajuste para texto digitado → treino/validação/teste com seleção congelada |
+| Revisões cruzadas entre agentes | 2 | Codex revisou o backend (6 apontamentos, verificados um a um) · Claude revisou a UI (7 achados: 5 corrigidos pelo Codex, 2 decididos pelo Ricardo) |
+| Correções por teste de paridade Python × TypeScript | 1 | 99,35% → 100% ao descobrir textos exportados truncados |
+| Deploys em produção até a versão final | 3 | 1º com 404 (preset de framework errado) → correção com `vercel.json` → correções da UI |
+| Rodadas de revisão do Ricardo | 4 | Escolha do desafio e da arquitetura · aprovação da proposta de automação · nome, conta e política de custo do deploy · conferência final do PR |
+
 Registro completo, com cada iteração: [`process-log/PROCESS_LOG.md`](process-log/PROCESS_LOG.md) · transcript: [`process-log/chat-exports/`](process-log/chat-exports/).
 
 ### Onde a IA errou e como corrigi

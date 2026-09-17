@@ -175,3 +175,13 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
 - Fork em `RicardoBarao/ai-master-challenge`, push da branch `submission/ricardo-dias` com credencial do `gh` só naquele comando (sem mudar a configuração global do git) e PR **#133** em rascunho. Depois, o `gh` voltou para a conta que estava ativa antes.
 - **Erro no caminho:** a primeira chamada de `gh repo fork` recusou a combinação de flags e o push falhou com "Repository not found". Nada foi publicado; refiz o fork e segui.
 - Com o LinkedIn preenchido e a data de envio, o Ricardo autorizou marcar o PR como pronto para avaliação.
+
+### [claude] 2026-09-16 — Conferência final contra os requisitos e a banca
+- **Pedido do Ricardo:** confirmar se todos os passos do desafio e a comunicação com a banca estavam concluídos. Em vez de responder de memória, conferi item por item contra o README do 002, o guia de submissão, o CONTRIBUTING e o template.
+- **O que a banca cobra na prática:** o repositório oficial não mudou desde o clone e não tem template de PR nem CI. Nos comentários de outros PRs, o avaliador revisa dentro do próprio PR e já pediu chat exports, screenshots e histórico incremental. Uma issue mostra que "dependências commitadas" custaram a vaga a um candidato. Aprovados recebem por e-mail um convite para teste lógico, que expira.
+- **3 lacunas encontradas e corrigidas (autorizadas pelo Ricardo):**
+  1. O enunciado pede para justificar o que **não** automatizar "com exemplos dos dados", e nós só tínhamos números. Agora o `automacao.md` traz 5 tickets reais do conjunto de teste, escolhidos por **regra fixa** (menor id com 10–40 palavras em cada situação) para não haver seleção a dedo. Ler os exemplos rendeu uma leitura honesta: um pedido rotineiro escalado só por "asap", um ticket barrado pelo guarda que estava com a categoria certa, e um rótulo que parece ruído no dataset.
+  2. O guia pede "quantas iterações foram necessárias". O README ganhou uma tabela com contagens verificáveis no histórico.
+  3. Higiene: `solution/app/README.md` ainda era o texto padrão do create-next-app. Foi trocado por setup, scripts, variáveis, estrutura e garantias testadas.
+- **Oferecido e não aplicado, por decisão do Ricardo:** exportar as sessões locais do Codex.
+- **Comunicação:** o PR é o único canal aceito. O acompanhamento de comentários no PR e do e-mail fica com o Ricardo.

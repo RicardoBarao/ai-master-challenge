@@ -48,6 +48,24 @@ No teste (7.176 tickets), esse fluxo mandou **65,3%** para roteamento automátic
 | **Reembolso e cancelamento** (tipos do Dataset 1) | Humano | Decisão financeira e de retenção |
 | **Envio automático de respostas** | Nunca | O rascunho é sempre revisado |
 
+### Exemplos reais dos dados
+
+Tickets do conjunto de teste (nunca usados em treino ou seleção), escolhidos por regra fixa para não haver seleção a dedo: em cada situação, o ticket de menor id com 10 a 40 palavras. A rota é a que a API aplica.
+
+| Situação | Ticket real (teste, texto já pré-processado) | Real → previsto | Confiança | Tratamento |
+|---|---|---|---|---|
+| **Termo de risco/urgência** | #174: _increase site increase site dear increase site storage quota invoicing site old asap work old assign directly best regards engineer_ | Storage → Storage | 86,5% | Termo(s) detectado(s): asap. Escalado para atendente sênior, sem rascunho de IA. |
+| **Pedido de privilégio pego pela regra de risco** | #8396: _is down again down again keep getting communications problem thanks senior analyst north_ | Administrative rights → Hardware | 77,8% | O modelo previu outra categoria, mas a probabilidade de privilégio passou do limiar: aprovação humana. |
+| **Pedido de privilégio que escapou** | #27574: _question guest wednesday october question guest hi issues guest wired issues connect client thank_ | Administrative rights → Hardware | 89,2% | Exemplo do vazamento residual: por isso conceder acesso nunca é automático, mesmo após o roteamento. |
+| **Texto fora do padrão do treino** | #182: _card on saturdays card saturdays hi change regarding availability cards cleaning ladies namely saturdays cards available until please assist thanks_ | Access → Access | 99,3% | Vocabulário pouco conhecido pelo modelo: triagem humana. |
+| **Baixa confiança** | #23: _badge access to be removed badge removed dear please badge since he working anymore best regards_ | Access → HR Support | 53,1% | O modelo não tem certeza suficiente: triagem humana confirma a categoria. |
+
+**Leitura honesta dos exemplos:** nem todo ticket barrado estava errado.
+- O exemplo de termo de risco é um pedido rotineiro de cota, escalado só por conter "asap".
+- O de texto fora do padrão tinha a categoria certa e mesmo assim foi para humano.
+
+Esse é o custo, medido e aceito, de uma política conservadora. Em produção, a lista de termos e os limiares devem ser calibrados com dados da operação. O exemplo de privilégio pego pela regra também sugere rótulos ruidosos no próprio dataset (o texto descreve uma falha de comunicação), outro motivo para re-treinar com dados rotulados pela própria equipe.
+
 Automatizar 100% seria o erro: no teste, **28,1% + 6,5%** dos tickets seguem com pessoas, e isso é o desenho, não uma falha.
 
 ## ROI (cenário)
