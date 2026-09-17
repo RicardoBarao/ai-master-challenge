@@ -1,20 +1,14 @@
-// Inferência do classificador exportado por analysis/03_classifier.py.
+// Inferência do classificador exportado por analysis/03_classifier.py + política de roteamento.
 // Reproduz o TfidfVectorizer do scikit-learn: tokens [a-z]{2,}, unigramas + bigramas,
 // tf sublinear (1 + ln tf), idf suavizado (já calculado), normalização L2.
-// Sem dependências de Node: é importado pela rota da API e pelo teste de paridade.
+// Funções puras, sem dependências de Node: usadas pela API, pelos testes e por scripts/evaluate-routing.ts.
+// A política é replicada em analysis/policy.py apenas para seleção de limiares na validação;
+// tests/routing.test.ts exige concordância de 100% entre as duas.
 
-import type { Category, ClassifyResponse, Route } from "./types";
+import type { Category, ClassifyResponse, ReasonCode, Route } from "./types";
+import type { Model, PolicyRules } from "./model-schema";
 
-export interface ModelFile {
-  version: number;
-  classes: Category[];
-  threshold: number;
-  oodThreshold: number; // fração mínima de palavras conhecidas pelo modelo
-  stopWords: string[]; // ignoradas no cálculo de knownShare
-  idf: Record<string, number>;
-  weights: Record<string, number[]>;
-  intercept: number[];
-}
+type SparseVec = Map<string, number>;
 
 export interface Doc {
   id: number;
@@ -22,13 +16,11 @@ export interface Doc {
   label: Category;
 }
 
-type SparseVec = Map<string, number>;
-
 export function normalize(text: string): string {
   return text
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -38,8 +30,7 @@ export function tokenize(text: string): string[] {
   return normalize(text).match(/\b[a-z]{2,}\b/g) ?? [];
 }
 
-export function vectorize(text: string, idf: Record<string, number>): SparseVec {
-  const tokens = tokenize(text);
+export function vectorize(tokens: string[], idf: Record<string, number>): SparseVec {
   const counts = new Map<string, number>();
   const add = (term: string) => {
     if (idf[term] !== undefined) counts.set(term, (counts.get(term) ?? 0) + 1);
@@ -70,17 +61,25 @@ function softmax(z: number[]): number[] {
 
 // Fração das palavras de conteúdo (sem stopwords) que o modelo conhece.
 // Mesma regra de known_share no Python.
-const stopWordSets = new WeakMap<string[], Set<string>>();
-export function knownShare(text: string, model: Pick<ModelFile, "idf" | "stopWords">): number {
-  let stop = stopWordSets.get(model.stopWords);
-  if (!stop) stopWordSets.set(model.stopWords, (stop = new Set(model.stopWords)));
-  const tokens = tokenize(text).filter((t) => !stop.has(t));
-  if (tokens.length === 0) return 0;
-  return tokens.filter((t) => model.idf[t] !== undefined).length / tokens.length;
+export function knownShare(tokens: string[], model: Model): number {
+  const content = tokens.filter((t) => !model.stopWordSet.has(t));
+  if (content.length === 0) return 0;
+  return content.filter((t) => model.idf[t] !== undefined).length / content.length;
 }
 
-export function predict(model: ModelFile, text: string) {
-  const vec = vectorize(text, model.idf);
+export interface Prediction {
+  tokens: string[];
+  vec: SparseVec;
+  category: Category;
+  confidence: number;
+  knownShare: number;
+  probabilities: { label: Category; p: number }[];
+  topTerms: { term: string; weight: number }[];
+}
+
+export function predict(model: Model, text: string): Prediction {
+  const tokens = tokenize(text);
+  const vec = vectorize(tokens, model.idf);
   const z = [...model.intercept];
   for (const [term, x] of vec) {
     const w = model.weights[term];
@@ -98,82 +97,92 @@ export function predict(model: ModelFile, text: string) {
     .map((t) => ({ term: t.term, weight: Math.round(t.weight * 1000) / 1000 }));
 
   return {
+    tokens,
     vec,
     category: model.classes[best],
     confidence: probs[best],
-    knownShare: knownShare(text, model),
-    probabilities: model.classes
-      .map((label, k) => ({ label, p: probs[k] }))
-      .sort((a, b) => b.p - a.p),
+    knownShare: knownShare(tokens, model),
+    probabilities: model.classes.map((label, k) => ({ label, p: probs[k] })).sort((a, b) => b.p - a.p),
     topTerms,
   };
 }
 
 // ---- Política de roteamento (docs/automacao.md) ----
-// Regras explícitas e auditáveis; não são aprendidas.
+// Ordem: escalação → guarda de domínio → confiança → categoria sempre-humana → risco de privilégio → automático.
 
-// Sinais de risco/urgência → humano sênior, independentemente da confiança do modelo.
-const ESCALATION_TERMS = [
-  "urgent", "urgently", "asap", "immediately", "critical", "outage", "breach", "hacked", "virus",
-  "malware", "phishing", "fraud", "legal", "lawsuit", "complaint", "cancel", "cancellation", "refund",
-];
+export interface RouteDecision {
+  route: Route;
+  reasonCode: ReasonCode;
+  routeReason: string;
+  draftAllowed: boolean;
+}
 
-// Concessão de privilégio nunca é automática: roteia, mas exige aprovação humana.
-const ALWAYS_HUMAN: Partial<Record<Category, string>> = {
-  "Administrative rights": "Pedido de privilégio administrativo exige aprovação humana (risco de segurança).",
-};
+const pct = (x: number) => `${(x * 100).toFixed(0)}%`;
 
-export function decideRoute(
-  text: string,
-  category: Category,
-  confidence: number,
-  known: number,
-  model: Pick<ModelFile, "threshold" | "oodThreshold">,
-): { route: Route; routeReason: string; draftAllowed: boolean } {
-  const { threshold, oodThreshold } = model;
-  const tokens = new Set(tokenize(text));
-  const hits = ESCALATION_TERMS.filter((t) => tokens.has(t));
+export function decideRoute(prediction: Prediction, model: Model, rules: PolicyRules): RouteDecision {
+  const { confidence: conf, ood, adminRights } = model.thresholds;
+  const tokenSet = new Set(prediction.tokens);
+  const hits = rules.escalationTerms.filter((t) => tokenSet.has(t));
   if (hits.length > 0) {
     return {
       route: "escalar",
+      reasonCode: "escalation_terms",
       routeReason: `Sinal de risco/urgência no texto (${hits.join(", ")}): vai direto para atendente sênior.`,
       draftAllowed: false,
     };
   }
   // Medido: fora do domínio o modelo erra com confiança alta. Vocabulário desconhecido → humano.
-  if (known < oodThreshold) {
+  if (prediction.knownShare < ood) {
     return {
       route: "revisao_humana",
-      routeReason: `Só ${(known * 100).toFixed(0)}% das palavras são conhecidas pelo modelo (mínimo ${(oodThreshold * 100).toFixed(0)}%): texto fora do padrão do treino, triagem humana.`,
+      reasonCode: "out_of_domain",
+      routeReason: `Só ${pct(prediction.knownShare)} das palavras são conhecidas pelo modelo (mínimo ${pct(ood)}): texto fora do padrão do treino, triagem humana.`,
       draftAllowed: true,
     };
   }
-  if (confidence < threshold) {
+  if (prediction.confidence < conf) {
     return {
       route: "revisao_humana",
-      routeReason: `Confiança ${(confidence * 100).toFixed(0)}% abaixo do limiar de ${(threshold * 100).toFixed(0)}%: triagem humana confirma a categoria.`,
+      reasonCode: "low_confidence",
+      routeReason: `Confiança ${pct(prediction.confidence)} abaixo do limiar de ${pct(conf)}: triagem humana confirma a categoria.`,
       draftAllowed: true,
     };
   }
-  const human = ALWAYS_HUMAN[category];
-  if (human) return { route: "revisao_humana", routeReason: human, draftAllowed: true };
+  const human = rules.alwaysHuman.find((r) => r.category === prediction.category);
+  if (human) {
+    return { route: "revisao_humana", reasonCode: "always_human", routeReason: human.reason, draftAllowed: true };
+  }
+  if (adminRights !== null) {
+    const pAdmin = prediction.probabilities.find((p) => p.label === rules.adminRightsCategory)?.p ?? 0;
+    if (pAdmin >= adminRights) {
+      return {
+        route: "revisao_humana",
+        reasonCode: "admin_rights_risk",
+        routeReason: `Probabilidade de ser pedido de privilégio administrativo (${pct(pAdmin)}) acima de ${pct(adminRights)}: aprovação humana.`,
+        draftAllowed: true,
+      };
+    }
+  }
   return {
     route: "auto",
-    routeReason: `Confiança ${(confidence * 100).toFixed(0)}% ≥ limiar de ${(threshold * 100).toFixed(0)}%: roteado automaticamente para a fila ${category}.`,
+    reasonCode: "auto",
+    routeReason: `Confiança ${pct(prediction.confidence)} ≥ limiar de ${pct(conf)}: roteado automaticamente para a fila ${prediction.category}.`,
     draftAllowed: true,
   };
 }
 
 // ---- Tickets similares (cosseno TF-IDF sobre amostra do treino) ----
 
-let neighborCache: { docs: Doc[]; vecs: SparseVec[] } | null = null;
+const neighborVecs = new WeakMap<Doc[], SparseVec[]>();
 
-export function similar(model: ModelFile, docs: Doc[], query: SparseVec, k = 3) {
-  if (!neighborCache || neighborCache.docs !== docs) {
-    neighborCache = { docs, vecs: docs.map((d) => vectorize(d.text, model.idf)) };
+export function similar(model: Model, docs: Doc[], query: SparseVec, k = 3) {
+  let vecs = neighborVecs.get(docs);
+  if (!vecs) {
+    vecs = docs.map((d) => vectorize(tokenize(d.text), model.idf));
+    neighborVecs.set(docs, vecs);
   }
   const scored: { text: string; label: Category; score: number }[] = [];
-  neighborCache.vecs.forEach((v, i) => {
+  vecs.forEach((v, i) => {
     let dot = 0;
     const [small, large] = query.size < v.size ? [query, v] : [v, query];
     for (const [term, x] of small) {
@@ -185,18 +194,22 @@ export function similar(model: ModelFile, docs: Doc[], query: SparseVec, k = 3) 
   return scored.sort((a, b) => b.score - a.score).slice(0, k);
 }
 
-export function classify(model: ModelFile, neighbors: Doc[], text: string): ClassifyResponse {
-  const { vec, category, confidence, knownShare: known, probabilities, topTerms } = predict(model, text);
-  const { route, routeReason, draftAllowed } = decideRoute(text, category, confidence, known, model);
+// Caminho único para chamadas unitárias e em lote: o lote só não calcula "similar".
+export function classifyTicket(
+  model: Model,
+  rules: PolicyRules,
+  text: string,
+  neighbors: Doc[] | null,
+): ClassifyResponse {
+  const prediction = predict(model, text);
+  const decision = decideRoute(prediction, model, rules);
   return {
-    category,
-    confidence,
-    knownShare: known,
-    probabilities,
-    topTerms,
-    route,
-    routeReason,
-    draftAllowed,
-    similar: similar(model, neighbors, vec),
+    category: prediction.category,
+    confidence: prediction.confidence,
+    knownShare: prediction.knownShare,
+    probabilities: prediction.probabilities,
+    topTerms: prediction.topTerms,
+    ...decision,
+    similar: neighbors ? similar(model, neighbors, prediction.vec) : [],
   };
 }

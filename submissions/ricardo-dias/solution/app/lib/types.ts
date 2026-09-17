@@ -1,4 +1,4 @@
-// Contratos entre a análise (Python → app/data/*.json) e a UI.
+// Contratos entre a análise (Python/TS → data/*.json) e a UI. Versão 3.
 // Dono: Claude Code. Para mudar, registrar o pedido em ../../../HANDOFF.md.
 
 export const CATEGORIES = [
@@ -14,8 +14,12 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 export type Severity = "bloqueante" | "alerta" | "info";
+export interface Interval {
+  low: number;
+  high: number;
+}
 
-// data/audit.json
+// ---------------- data/audit.json ----------------
 export interface AuditFinding {
   id: string;
   dataset: "D1" | "D2";
@@ -32,98 +36,178 @@ export interface AuditReport {
   findings: AuditFinding[];
 }
 
-// data/diagnostico.json
+// ---------------- data/model_metrics.json (Python) ----------------
+export interface SplitInfo {
+  name: "treino" | "validacao" | "teste";
+  n: number;
+  share: number;
+  purpose: string;
+}
+export interface ClassMetrics {
+  label: Category;
+  precision: number;
+  recall: number;
+  f1: number;
+  support: number;
+}
+export interface ModelMetrics {
+  generatedAt: string;
+  seed: number;
+  splits: SplitInfo[];
+  // Tudo aqui foi escolhido olhando SÓ a validação e congelado antes da avaliação no teste.
+  selection: {
+    model: string;
+    C: number;
+    coefEps: number;
+    confidenceThreshold: number;
+    oodThreshold: number;
+    adminRightsThreshold: number | null;
+    criteria: string[];
+    candidates: { name: string; accuracy: number; macroF1: number }[]; // métricas de VALIDAÇÃO
+  };
+  test: {
+    accuracy: number;
+    accuracyCI: Interval;
+    macroF1: number;
+    macroF1CI: Interval;
+    baselineAccuracy: number;
+    perClass: ClassMetrics[];
+    confusion: { labels: Category[]; matrix: number[][] };
+  };
+  // Números anteriores, medidos no mesmo conjunto usado para ajustar parâmetros. Só histórico.
+  exploratory: { note: string; accuracy: number; macroF1: number; autoCoverage: number; autoAccuracy: number };
+  crossDomain: {
+    note: string;
+    n: number;
+    confidentShare: number; // D1 com confiança ≥ limiar
+    confidentPredictedHardware: number; // desses, fração prevista como Hardware (erro confiante)
+    oodFlagged: number; // D1 barrado pelo guarda de domínio
+    inDomainOodFlagged: number; // teste do D2 barrado pelo guarda
+    routes: { route: Route; share: number }[]; // política completa aplicada ao D1
+  };
+}
+
+// ---------------- data/routing_eval.json (TS: funções reais da API) ----------------
+export type Route = "auto" | "revisao_humana" | "escalar";
+export type ReasonCode =
+  | "escalation_terms"
+  | "out_of_domain"
+  | "low_confidence"
+  | "always_human"
+  | "admin_rights_risk"
+  | "auto";
+
+export interface RoutingPartition {
+  n: number;
+  modelAccuracy: number; // categoria prevista = real, em todos os tickets
+  routes: { route: Route; n: number; share: number }[];
+  reasons: { reasonCode: ReasonCode; n: number; share: number }[];
+  auto: { n: number; share: number; shareCI: Interval; accuracy: number; accuracyCI: Interval; errors: number };
+  byTrueCategory: { label: Category; n: number; auto: number; revisao_humana: number; escalar: number; autoAccuracy: number | null }[];
+  adminRightsLeak: {
+    trueAdminRights: number;
+    autoRoutedElsewhere: number; // rótulo real AR, previsto como outra categoria e roteado automaticamente
+    share: number;
+    toQueues: { label: Category; n: number }[];
+  };
+  pythonAgreement: { route: number; label: number; maxConfidenceDiff: number };
+}
+export interface RoutingEval {
+  generatedAt: string;
+  note: string;
+  thresholds: { confidence: number; ood: number; adminRights: number | null };
+  validation: RoutingPartition;
+  test: RoutingPartition; // números publicados
+}
+
+// ---------------- data/diagnostico.json ----------------
 export interface Assumption {
   id: string;
   label: string;
   value: number;
   unit: string;
-  source: string; // de onde veio a premissa (benchmark, dado, julgamento)
-  editable: boolean; // a UI pode expor como input
+  kind: "medido" | "premissa" | "referencia"; // referencia = medido em outro contexto (D2)
+  source: string; // de onde veio e como validar
+  editable: boolean;
+}
+export interface Observation {
+  id: string;
+  label: string;
+  value: string;
+  detail: string; // descritivo do arquivo; NÃO é evidência de gargalo por si só
 }
 export interface SegmentCell {
   channel: string;
   priority: string;
   n: number;
-  backlogShare: number; // Open + Pending / total
+  backlogShare: number; // Open + Pending / total — descritivo
+  backlogCI: Interval; // Wilson 95%
   pendingCustomerShare: number;
   csatMean: number | null;
+}
+export interface SegmentTest {
+  variable: string;
+  test: string;
+  pValue: number;
+  significant: boolean;
+  conclusion: string;
 }
 export interface CsatDriver {
   variable: string;
   test: string;
   pValue: number;
-  effectSize: number;
-  groups: { label: string; mean: number; n: number }[];
+  effectSize: number; // ε² de Kruskal-Wallis
+  detectableDiff: number; // meia-largura do IC 95% da diferença entre dois grupos típicos (pontos de CSAT)
+  conclusion: string;
+  groups: { label: string; mean: number; ci: Interval; n: number }[];
 }
 export interface WasteLine {
-  step: string; // ex.: "Triagem manual"
-  hoursPerYear: number;
-  automatableShare: number; // 0..1
-  recoverableHoursPerYear: number;
+  id: "triage" | "rework" | "followup" | "drafting";
+  step: string;
+  hoursPerYear: number; // linha de base (sem automação)
+  recoverableHoursPerYear: number; // já descontado o trabalho residual; pode ser negativo
   rationale: string;
 }
 export interface DiagnosticoReport {
   generatedAt: string;
   nTickets: number;
-  annualVolume: number; // volume de referência do enunciado (30k)
-  headline: { label: string; value: string; detail: string }[];
+  observations: Observation[];
   segments: SegmentCell[];
-  worstSegments: SegmentCell[];
-  // Teste se as diferenças entre segmentos são reais. Se significant=false, a UI deve
-  // dizer que o "pior segmento" é indistinguível do acaso, em vez de destacá-lo.
-  segmentTests: { variable: string; test: string; pValue: number; significant: boolean }[];
-  csatDrivers: CsatDriver[];
-  assumptions: Assumption[];
-  waste: WasteLine[];
-}
-
-// data/model_metrics.json
-export interface ModelMetrics {
-  generatedAt: string;
-  split: { train: number; test: number; seed: number };
-  candidates: { name: string; accuracy: number; macroF1: number }[];
-  chosen: string;
-  perClass: { label: Category; precision: number; recall: number; f1: number; support: number }[];
-  confusion: { labels: Category[]; matrix: number[][] };
-  coverage: { threshold: number; coverage: number; accuracy: number }[];
-  recommendedThreshold: number;
-  autoRouting: { coverage: number; accuracy: number }; // com limiar de confiança + guarda de domínio
-  llmFallback?: {
-    model: string;
-    n: number;
-    accuracyLocal: number;
-    accuracyLlm: number;
-    costUsd: number;
-    p50LatencyMs: number;
-  };
-  crossDomain?: {
+  tests: { segmentTests: SegmentTest[]; csatDrivers: CsatDriver[] };
+  limitations: { id: string; text: string }[];
+  scenario: {
     note: string;
-    confidenceHistogram: { bucket: string; share: number }[];
-    confidentShare: number; // D1 com confiança ≥ limiar
-    confidentPredictedHardware: number; // desses, fração prevista como Hardware (erro confiante)
-    oodGuard: { threshold: number; inDomainFlagged: number; outDomainFlagged: number };
+    assumptions: Assumption[];
+    waste: WasteLine[];
+    totals: { hoursPerYear: number; recoverableHoursPerYear: number; recoverableCost: number; fte: number };
+    sensitivity: { autoShare: number; draftSaving: number; recoverableHoursPerYear: number }[];
   };
 }
 
+// ---------------- APIs ----------------
 // POST /api/classify { text } → ClassifyResponse
-// POST /api/classify { texts: string[] } (até 500) → { results: ClassifyResponse[] } com similar = []
-export type Route = "auto" | "revisao_humana" | "escalar";
+// POST /api/classify { texts: string[] } (1..500) → { results: ClassifyResponse[] } com similar = []
+// Erros: 400 { error, errors?: {index, status, error}[] } | 413 { error }
 export interface ClassifyResponse {
   category: Category;
   confidence: number;
-  knownShare: number; // fração das palavras do ticket conhecidas pelo modelo (guarda de domínio)
+  knownShare: number; // fração das palavras de conteúdo conhecidas pelo modelo (guarda de domínio)
   probabilities: { label: Category; p: number }[];
   topTerms: { term: string; weight: number }[]; // explicação: contribuição por termo
   route: Route;
-  routeReason: string;
-  draftAllowed: boolean; // false em escalações: a resposta é escrita por humano sênior
+  reasonCode: ReasonCode;
+  routeReason: string; // já redigido em PT-BR para o usuário final
+  draftAllowed: boolean; // false em escalações; o servidor também bloqueia /api/draft
   similar: { text: string; label: Category; score: number }[];
 }
 
-// GET /api/sample?n=200  → tickets do holdout (nunca vistos no treino)
+// GET /api/sample?n=200 → tickets do conjunto de TESTE (nunca usados em treino ou seleção)
 export interface SampleResponse {
   items: { id: number; text: string; label: Category }[];
 }
 
-// POST /api/draft { text, category } → stream de texto (rascunho para o agente aprovar)
+// POST /api/draft { text } → stream de texto (rascunho para o agente aprovar)
+// A categoria é recalculada no servidor (header X-Draft-Category). 403 se a política bloquear; 503 sem provedor.
+export interface DraftRequest {
+  text: string;
+}
