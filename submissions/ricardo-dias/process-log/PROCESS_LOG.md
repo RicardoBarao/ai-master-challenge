@@ -74,3 +74,43 @@ Hipótese do planejamento: o Dataset 1 pode ser sintético. Testei em vez de ass
   1. A formatação brasileira de números quebrou a pontuação da frase pela segunda vez ("integral. ou R$ 145.282 por ano. com"). Troquei os `.replace` encadeados por formatadores dedicados (`br_int`, `br_pct`).
   2. A primeira versão afirmava "fila sem reconhecimento ao cliente" para os abertos sem 1ª resposta. Isso é interpretação: no dataset sintético pode ser só a definição de "Open". Reescrevi com a ressalva.
 - **Calculadora da UI:** a fórmula existe em Python e em `lib/waste.ts`. `scripts/waste-check.ts` garante que as duas dão o mesmo resultado, para a calculadora nunca contradizer o relatório.
+
+### [claude] 2026-09-16 — Revisão cruzada pelo Codex e correções
+**Contexto:** o Ricardo pediu ao Codex uma revisão do backend em modo leitura, antes de ampliar funcionalidades. O Codex apontou 6 problemas. Verifiquei cada um no código antes de agir:
+
+| # | Apontamento do Codex | Verificação | O que mudou |
+|---|---|---|---|
+| 1 | O mesmo conjunto servia para escolher parâmetros e para reportar o teste | **Procedia.** O `te` (20%) escolhia modelo, poda, limiar de confiança e guarda, e depois era publicado como teste | Treino 70% / validação 15% / teste 15%. Tudo escolhido na validação e congelado (`selection`) antes do teste. IC 95% por bootstrap. Números antigos marcados como **exploratórios** |
+| 2 | `autoRouting` ignorava parte da política | **Procedia.** Escalação e "Administrative rights → humano" ficavam de fora, e o vazamento de privilégio nunca tinha sido medido | `scripts/evaluate-routing.ts` mede com **as funções da API**. `policy.py` replica a política só para selecionar, e um teste exige 100% de concordância. Vazamento medido deu **>2% na validação sem regra**, então entrou a regra "probabilidade de privilégio ≥ τ → humano", com τ escolhido na validação |
+| 3 | `/api/draft` confiava na categoria enviada pelo cliente | **Procedia** | A rota recebe só `{text}`, reclassifica no servidor e bloqueia com 403 **antes** de chamar o LLM. Teste com espião prova 0 chamadas, inclusive com categoria forjada |
+| 4 | `model.json` sem `stopWords` quebrava a inferência | **Parcial.** O arquivo commitado já tinha o campo; o Codex leu um estado intermediário da minha alteração. Mas a lacuna era real: o formato mudou, a `version` continuou 1 e não havia validação | `model.json` v2 validado com zod ao carregar, com erro claro ("versão X incompatível… rode 03_classifier.py") e testes para versão errada e campo ausente |
+| 5 | Diagnóstico incompleto e redação forte demais; vazamento no CV da auditoria | **Procedia** | Auditoria com `Pipeline` dentro de cada fold (18,8% → 18,7%, conclusão mantida). Redação "não detectamos associação" com diferença detectável (±0,13–0,17 ponto). Backlog tratado como descritivo. Diagnóstico em observado / testes / limitações / cenário. Economia desconta conferência, revisão e erro residual e usa a cobertura **final**. Docs gerados de templates, sem número digitado à mão |
+| 6 | Validação da API inconsistente, com cortes silenciosos | **Procedia** | `lib/validation.ts` único: 400/413 explícitos, lote recusado inteiro com índices dos erros, e o lote usa o mesmo caminho do unitário. Testes de limites (5.000/5.001, 500/501), tipos e equivalência lote × unitário |
+
+**Números antigos × finais:**
+
+| Métrica | Exploratório (1ª versão) | Final (teste, IC 95%) |
+|---|---|---|
+| Acurácia | 86,4% | **86,0%** (85,2–86,7%) |
+| F1 macro | 0,865 | **0,856** (0,846–0,864) |
+| Roteamento automático | 69,7% (só confiança + guarda) | **65,3%** (política completa da API) |
+| Acerto nos automáticos | 95,7% | **94,9%** (94,3–95,6%) |
+| Horas recuperáveis/ano (cenário) | ~3.230 | **~2.515** (desconta resíduos) |
+
+**Leitura honesta:**
+- Os números caíram um pouco, como era de se esperar quando a avaliação deixa de "ver" as escolhas.
+- O acerto nos automáticos ficou **abaixo da meta de 95%** usada na validação. Isso está reportado assim, com a recomendação de começar em modo sombra.
+- As decisões de desenho (usar regressão logística, criar o guarda, ignorar stopwords) foram tomadas vendo o conjunto antigo, então o novo teste não é "virgem" em sentido estrito. Isso está documentado em `docs/modelo.md`.
+
+**Outros erros pegos nesta rodada:**
+- `getPolicyRules` tentava ler do disco um arquivo que vem de import (3 testes falharam e corrigi).
+- A flag de regex `/s` não compila no target ES2017 do projeto.
+- O `vitest` 5 exigia `@types/node` ≥ 22, e o scaffold veio com a v20: alinhei com o Node 24 em uso.
+- A nota do cruzamento saiu com ponto decimal. Rodei o pipeline de novo para confirmar que a única diferença entre execuções vinha dessa correção.
+
+**Verificação:**
+- `bash solution/pipeline.sh` roda do zero: 40 testes, `tsc` e lint ok, e `next build` ok.
+- Os JSONs lidos via `fs` entram no bundle de deploy (conferido no `.nft.json`).
+- Os leitores de UI do Codex (`lib/data.ts`) aceitam os quatro relatórios v3 (teste temporário).
+
+**Sobre trabalhar com dois agentes:** a revisão do Codex pegou problemas metodológicos que eu não tinha visto, porque eu estava perto demais do código. O valor esteve em *verificar* cada apontamento, e não em aceitar todos: um deles era parcialmente um artefato de timing entre os agentes.
