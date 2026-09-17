@@ -35,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </main>
         <footer className="app-footer">
           <span>
-            Ricardo Dias <span className="footer-separator">/</span> AI Master
+            Ricardo Barão <span className="footer-separator">/</span> AI Master
             Challenge
           </span>
           <span>Dados, decisões e supervisão humana.</span>

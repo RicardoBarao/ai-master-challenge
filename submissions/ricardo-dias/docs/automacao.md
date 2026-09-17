@@ -2,8 +2,6 @@
 
 # Proposta de automação com IA
 
-> **Rascunho para revisão do Ricardo.** Os números vêm dos arquivos gerados. A priorização e os limites do que não automatizar são julgamento e devem ser revisados.
-
 ## Princípio
 
 Automatizar **o que é repetitivo, mensurável e reversível**. Manter com pessoas **o que envolve dinheiro, acesso, risco ou um cliente insatisfeito**. Toda automação começa em modo sombra (sugere sem aplicar) e só passa a agir quando o acerto medido na própria operação justificar.
