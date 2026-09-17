@@ -22,6 +22,11 @@ const priorityLabels: Record<string, string> = {
   Critical: "Crítica",
 };
 const variableLabels: Record<string, string> = {
+  canal: "Canal",
+  prioridade: "Prioridade",
+  tipo: "Tipo de ticket",
+  gênero: "Gênero",
+  "canal × prioridade": "Canal × prioridade",
   "Ticket Type": "Tipo de ticket",
   "Ticket Priority": "Prioridade",
   "Ticket Channel": "Canal",
@@ -161,10 +166,15 @@ export function SegmentHeatmap({ report }: { report: DiagnosticoReport }) {
                             style={{
                               background: `rgba(73,119,146,${0.04 + cell.backlogShare * 0.2})`,
                             }}
-                            title={`IC 95%: ${percent(cell.backlogCI.low)} a ${percent(cell.backlogCI.high)}`}
                           >
-                            <strong>{percent(cell.backlogShare, 0)}</strong>
+                            <strong>{percent(cell.backlogShare)}</strong>
                             <small>{number(cell.n)} tickets</small>
+                            <small className="heat-ci">
+                              IC 95%
+                              <br />
+                              {percent(cell.backlogCI.low)}–
+                              {percent(cell.backlogCI.high)}
+                            </small>
                           </span>
                         ) : (
                           "—"
@@ -183,7 +193,8 @@ export function SegmentHeatmap({ report }: { report: DiagnosticoReport }) {
           <span>Maior</span>
         </div>
         <p className="field-hint" style={{ marginTop: 16 }}>
-          A cor representa uma contagem, não uma classificação de gargalo.
+          A cor representa uma contagem, não uma classificação de gargalo. IC
+          95% indica o intervalo de confiança da proporção de cada grupo.
         </p>
       </div>
     </section>
@@ -244,13 +255,25 @@ export function DiagnosticDetails({ report }: { report: DiagnosticoReport }) {
                       {driver.test} · Tamanho de efeito:{" "}
                       {number(driver.effectSize, 4)}
                     </p>
-                    <div className="table-scroll">
+                    <div
+                      className="table-scroll"
+                      tabIndex={0}
+                      role="region"
+                      aria-label={`CSAT por grupo: ${variableLabels[driver.variable] ?? driver.variable}`}
+                    >
                       <table>
                         <thead>
                           <tr>
-                            <th>Grupo</th>
-                            <th className="numeric">CSAT médio</th>
-                            <th className="numeric">n</th>
+                            <th scope="col">Grupo</th>
+                            <th scope="col" className="numeric">
+                              CSAT médio
+                            </th>
+                            <th scope="col" className="numeric">
+                              IC 95%
+                            </th>
+                            <th scope="col" className="numeric">
+                              n
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -259,6 +282,10 @@ export function DiagnosticDetails({ report }: { report: DiagnosticoReport }) {
                               <td>{group.label}</td>
                               <td className="numeric">
                                 {number(group.mean, 2)}
+                              </td>
+                              <td className="numeric">
+                                {number(group.ci.low, 2)}–
+                                {number(group.ci.high, 2)}
                               </td>
                               <td className="numeric">{number(group.n)}</td>
                             </tr>

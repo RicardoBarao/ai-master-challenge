@@ -719,7 +719,12 @@ tbody tr:hover td {
 .heat-cell small {
   display: block;
   margin-top: 2px;
-  font-size: 9px;
+  font-size: 11px;
+}
+.heat-cell .heat-ci {
+  margin-top: 6px;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 .chart-legend {
   display: flex;

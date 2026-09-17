@@ -21,6 +21,11 @@ import { Icon } from "@/components/icons";
 import { RoutingDetails } from "@/components/model-routing";
 
 export const metadata: Metadata = { title: "Avaliação do modelo" };
+const splitLabels = {
+  treino: "Treino",
+  validacao: "Validação",
+  teste: "Teste",
+};
 export default async function ModelPage() {
   const [model, routing] = await Promise.all([
     readModelMetrics(),
@@ -96,9 +101,7 @@ export default async function ModelPage() {
               <div className="split-labels">
                 {model.splits.map((split) => (
                   <div key={split.name}>
-                    <h3>
-                      {split.name === "validacao" ? "Validação" : split.name}
-                    </h3>
+                    <h3>{splitLabels[split.name]}</h3>
                     <strong>
                       {number(split.n)}{" "}
                       <span className="field-hint">

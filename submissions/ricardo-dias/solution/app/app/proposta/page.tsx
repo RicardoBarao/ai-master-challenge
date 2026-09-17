@@ -73,21 +73,17 @@ export default async function ProposalPage() {
           title="O atendimento continua tendo um responsável."
           action={<Badge tone="gold">Fluxo proposto</Badge>}
         />
-        {document ? (
-          <div className="flow-steps">
-            {steps.map((step, i) => (
-              <div className="flow-step" key={step.title}>
-                <span className="step-number">
-                  {String(i + 1).padStart(2, "0")} /
-                </span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <Unavailable title="Fluxo operacional aguardando documentação." />
-        )}
+        <div className="flow-steps">
+          {steps.map((step, i) => (
+            <div className="flow-step" key={step.title}>
+              <span className="step-number">
+                {String(i + 1).padStart(2, "0")} /
+              </span>
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+            </div>
+          ))}
+        </div>
       </section>
       {routing && <PolicyFlow thresholds={routing.thresholds} />}
       <div className="stats-grid">

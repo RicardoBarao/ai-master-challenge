@@ -6,7 +6,7 @@ Quadro curto. Cada agente atualiza a própria seção e responde pedidos. Apague
 | Agente | Fazendo agora | Próximo |
 |---|---|---|
 | Claude Code | Revisão cruzada da UI concluída (abaixo); UI commitada em `df02646` | Remover a nota de rascunho do `automacao.md` após revisão do Ricardo; screenshots, deploy e PR |
-| Codex | UI pronta para revisão cruzada: quatro páginas, contratos v3 e fluxos interativos integrados | conferir visual desktop/mobile e executar suíte/build no ambiente sem bloqueio de subprocessos |
+| Codex | Itens 3–7 da revisão corrigidos; TypeScript, lint e verificações de renderização aprovados | revalidar suíte/build no ambiente do Claude e conferir visual desktop/mobile |
 
 ## Contratos prontos
 - `solution/app/lib/types.ts` — **v3** (estável; não vou mudar sem registrar aqui).
@@ -27,11 +27,15 @@ _(formato: `- [de → para] pedido — status`)_
 Achados, do mais importante ao menor:
 1. **[Claude/Ricardo — não é da UI]** A `/proposta` exibe a nota "Rascunho para revisão do Ricardo" do topo do `automacao.md`. A nota vem do meu template e sai depois que o Ricardo revisar o conteúdo. — aberto (Claude)
 2. **[Ricardo decide]** Nome inconsistente: rodapé "Ricardo Dias" × README "Ricardo Barão". Definir o nome oficial e alinhar os dois. — aberto
-3. **[→ Codex] Similaridade exibida como porcentagem** ("Similaridade 44%"). O score é um cosseno TF-IDF, não uma probabilidade; em "%" parece chance de acerto. Sugestão: "similaridade 0,44" ou uma escala qualitativa (alta/média/baixa). — aberto
-4. **[→ Codex] Intervalos de confiança pouco visíveis.** No heatmap o IC só aparece no `title` (inacessível em toque e teclado); na tabela de CSAT por grupo, o `ci` existe no JSON mas não é mostrado. Como a mensagem central é "não detectamos diferença", mostrar a faixa ajuda o leitor a ver a sobreposição. — aberto
-5. **[→ Codex] Rótulos em minúsculas.** `variableLabels` espera chaves em inglês ("Ticket Channel"), mas `segmentTests`/`csatDrivers` usam `variable` em PT-BR ("canal", "prioridade", "tipo", "gênero", "canal × prioridade"), então o fallback exibe em minúsculas. O mesmo acontece em `/modelo` com as partições "treino" e "teste". — aberto
-6. **[→ Codex] Casas decimais inconsistentes.** `percent()` usa só `maximumFractionDigits: 1`, então no mesmo painel aparecem "34%" e "33,3%". Sugestão: `minimumFractionDigits: 1` quando `digits > 0`. — aberto
-7. **[→ Codex, menor]** Em `/proposta`, os 5 passos do fluxo (fixos no código) só aparecem se o documento carregar, um acoplamento desnecessário. `public/{file,globe,next,vercel,window}.svg` são restos do scaffold e não são usados. — aberto
+3. **Similaridade exibida como porcentagem — corrigido.** Agora usa índice decimal (`0,44`), com explicação de que mede proximidade do vocabulário entre textos. Os percentuais de confiança do classificador permanecem como percentuais.
+4. **Intervalos de confiança pouco visíveis — corrigido.** Cada célula do heatmap mostra seu IC 95% em texto permanente, junto da proporção e quantidade. CSAT por grupo ganhou coluna de IC 95%; a região da tabela tem nome acessível e foco por teclado para rolagem. Os valores vêm dos intervalos já existentes no JSON.
+5. **Rótulos em minúsculas — corrigido.** O mapa aceita as chaves PT-BR dos relatórios. As partições usam rótulos explícitos: Treino, Validação e Teste.
+6. **Casas decimais inconsistentes — corrigido.** `percent()` usa mínimo e máximo iguais ao parâmetro `digits`: uma casa por padrão (`34,0%`), preservando os locais que pedem explicitamente zero casas.
+7. **Fluxo dependente do documento e assets sem uso — corrigido.** Os cinco passos aparecem mesmo quando o documento está indisponível; só a seção documental mostra o aviso. Removidos os cinco SVGs do scaffold após busca por referências.
+
+**Validação das correções 3–7 (Codex):** `tsc --noEmit`, `npm run lint` e `git diff --check` passaram. Verificação em processo único com React/jsdom: precisão dos percentuais; ICs de todos os segmentos e grupos de CSAT; rótulos das partições; cinco passos com leitor do documento simulado como indisponível; similaridade decimal após classificação; assets removidos. `npm test` continua bloqueado antes de executar testes (`spawn EPERM` na consulta `net use` do Vite). Os 53/53 e o build aprovados acima são da versão anterior a estas correções. **[Codex → Claude]** Reexecutar `npm test` e `npm run build` para este diff.
+
+**Versionamento das correções 3–7:** a tentativa pelo `scripts/git-add.sh` foi bloqueada ao iniciar o Git Bash (`couldn't create signal pipe`, erro 5). O diff está no workspace, sem stage/commit desta rodada. **[Codex → Claude]** Após revalidar, versionar somente os 11 arquivos da interface alterados/removidos e os registros em HANDOFF/PROCESS_LOG, com prefixo `[codex]`.
 
 **Ainda não verificado:** layout visual desktop/mobile e contraste real. Nenhum dos dois agentes tem navegador liberado ainda; fica para a etapa de screenshots.
 

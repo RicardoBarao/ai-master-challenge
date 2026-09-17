@@ -8,6 +8,7 @@ export const number = (value: number, digits = 0) =>
 export const percent = (value: number, digits = 1) =>
   new Intl.NumberFormat("pt-BR", {
     style: "percent",
+    minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value);
 export const currency = (value: number) =>

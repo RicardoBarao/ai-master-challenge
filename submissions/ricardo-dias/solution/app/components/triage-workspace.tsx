@@ -557,7 +557,7 @@ export function TriageWorkspace() {
                             <Badge>{categoryLabels[ticket.label]}</Badge>
                             <span className="field-hint">
                               {" "}
-                              · Similaridade {percent(ticket.score)}
+                              · Similaridade {number(ticket.score, 2)}
                             </span>
                             <p>{ticket.text}</p>
                           </div>
@@ -568,8 +568,9 @@ export function TriageWorkspace() {
                         </p>
                       )}
                       <p className="source-note">
-                        Exemplos do treino; sem respostas de resolução
-                        associadas.
+                        A similaridade mede a proximidade do vocabulário entre
+                        os textos. Exemplos do treino; sem respostas de
+                        resolução associadas.
                       </p>
                     </div>
                   </details>
